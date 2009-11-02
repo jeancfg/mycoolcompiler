@@ -1,0 +1,71 @@
+class Class0 {
+	
+};
+
+class Class2 inherits Class0 {
+
+};
+
+class Class4 inherits Class2 {
+
+};
+
+class Class6 inherits Class4 {
+
+};
+
+class Class8 inherits Class6 {
+
+};
+
+class Class10 inherits Class8 {
+
+};
+
+
+
+class Matrix inherits Class10 {
+	a11 : Int <-  0 ;
+	a12 : Int <-  1 ;
+	a13 : Int <-  2 ;
+	a21 : Int <-  3 ;
+	a22 : Int <-  4 ;
+	a23 : Int <-  5 ;
+	a31 : Int <-  6 ;
+	a32 : Int <-  7 ;
+	a33 : Int <-  8 ;
+
+	init(
+		va11 : Int ,
+		va12 : Int ,
+		va13 : Int ,
+		va21 : Int ,
+		va22 : Int ,
+		va23 : Int ,
+		va31 : Int ,
+		va32 : Int ,
+		va33 : Int
+	) : SELF_TYPE {
+		{
+			a11 <- va11;
+			a12 <- va12;
+			a13 <- va13;
+			
+			a21 <- va21;
+			a22 <- va22;
+			a23 <- va23;
+			
+			a31 <- va31;
+			a32 <- va32;
+			a33 <- va33;
+			
+			self;
+		}
+	};
+};
+
+class Main {
+	main() : String {
+		"Just contemplating the power of preprocessing"
+	};
+};

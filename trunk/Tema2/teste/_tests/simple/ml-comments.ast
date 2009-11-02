@@ -1,0 +1,17 @@
+#7
+_program
+  #7
+  _class
+    Main
+    Object
+    "_tests/simple/ml-comments.cl"
+    (
+    #8
+    _method
+      main
+      Int
+      #9
+      _int
+        0
+      : Int
+    )
