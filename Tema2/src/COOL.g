@@ -1,4 +1,4 @@
-grammar cool;
+grammar COOL;
 
 program 
   :
@@ -56,12 +56,15 @@ TYPE
   : 
   ('A'..'Z')
   (('a'..'z') | ('A'..'Z'))*
+  |
+  'SELF_TYPE'
   ;
   
 ID  
   : 
   (('a'..'z') 
   | ('A'..'Z')
+  | ('_')
   )+
   ;
   
@@ -82,3 +85,10 @@ INTEGER
   : 
   '0'..'9'+
   ;
+
+COMMENT
+  :
+  '(*' ( options {greedy=false;} : . )* '*)' {$channel = HIDDEN;}
+  | '--' ~('\n'|'\r')* '\r'? ('\n')* {$channel = HIDDEN;}
+  ;
+  
