@@ -1,0 +1,24 @@
+#11
+_program
+  #11
+  _class
+    Main
+    Object
+    "_tests/advanced/ml-comments.cl"
+    (
+    #12
+    _method
+      main
+      String
+      #13
+      _block
+        #14
+        _string
+          "At a first glance, this is a very simple source file.(* At least just the code :)"
+        : String
+        #15
+        _string
+          "Oh well, too many comments for a simple program.*)"
+        : String
+      : String
+    )

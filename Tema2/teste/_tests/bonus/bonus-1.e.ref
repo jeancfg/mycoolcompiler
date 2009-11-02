@@ -1,0 +1,26 @@
+
+class Test inherits IO {
+	print() : SELF_TYPE {
+		out_string("Variant A:")
+	};
+	
+};
+
+
+
+
+
+class Main {
+	var1 : Int <- 10;
+	var2 : Int <- 20;
+	var3 : Int <- 30;
+	
+	main() : Int {
+		let test : Test <- new Test in {
+			test.print().out_string("%X%").out_int( 11 );
+			test.out_string("It all happened in ").out_string("_tests/bonus/bonus-1.cl");
+			test.out_string("We are here: ").out_string( "31" );
+			0;
+		}
+	};
+};
