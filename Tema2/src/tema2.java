@@ -51,8 +51,8 @@ public class tema2 {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		//runBatteryOfTests(simpleTestsRoot);
+		runBatteryOfTests(simpleTestsRoot);
 		//runBatteryOfTests(advancedTestsRoot);
-		runBatteryOfTests(complexTestsRoot);
+		//runBatteryOfTests(complexTestsRoot);
 	}
 }
