@@ -148,7 +148,9 @@ NOT_ST
 	;
 
 TYPE	
-	:	
+	:
+	'SELF_TYPE'
+	|
 	('A'..'Z')
 	(('a'..'z') | ('A'..'Z'))*
 	;
@@ -184,4 +186,3 @@ COMMENT
   '(*' ( options {greedy=false;} : . )* '*)' {$channel = HIDDEN;}
   | '--' ~('\n'|'\r')* '\r'? ('\n')* {$channel = HIDDEN;}
   ;
-  
