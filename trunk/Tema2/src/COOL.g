@@ -21,7 +21,7 @@ formal
 	ID ':' TYPE
 	;
 
-expr	
+expr
 	:	
 	(ID '<-' expr 
 	| TRUE_ST 
@@ -34,7 +34,7 @@ expr
 	| IF_ST expr THEN_ST expr ELSE_ST expr FI_ST 
 	| WHILE_ST expr LOOP_ST expr POOL_ST 
 	| CASE_ST expr OF_ST (ID ':' TYPE '=>' expr ';')+ ESAC_ST 
-	| LET_ST ID ':' TYPE ('<-' expr)? (',' ID ':' TYPE ('<-' expr)?)* IN_ST expr 
+	| LET_ST ID ':' TYPE ('<-' expr)? (',' ID ':' TYPE ('<-' expr)?)* IN_ST expr
 	| '(' expr ')' 
 	| NOT_ST expr 
 	| STRING 
@@ -171,11 +171,23 @@ WS
         | '\n'
         ) {$channel=HIDDEN;}
     	;
-STRING	
+
+/*STRING	
 	:	
-	'"' ~'"'* '"'
+	'"' ~'"'* '\\\n' '"'
 	;
-	
+*/
+
+STRING
+    :
+    '\"' ( ESC_SEQ | ~('\\\n' | '\"') )* '\"'
+    ;
+
+CHAR
+    :
+    '\'' ( ESC_SEQ | ~('\\'|'\'') ) '\''
+    ;
+
 INTEGER	
 	:	
 	'0'..'9'+
@@ -186,3 +198,9 @@ COMMENT
   '(*' ( options {greedy=false;} : . )* '*)' {$channel = HIDDEN;}
   | '--' ~('\n'|'\r')* '\r'? ('\n')* {$channel = HIDDEN;}
   ;
+
+fragment
+ESC_SEQ
+    :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
+    ;
+  

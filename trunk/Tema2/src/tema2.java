@@ -9,9 +9,6 @@ import org.antlr.runtime.CommonTokenStream;
 
 /**
  * TODO:
- * 1. Probleme cu case sensitivity: tokenii case insensitive trebuiesc tratati eficient
- * si nu tot inputu e case insensitive
- * 2. Nu parsam bine string.cl din advanced
  */
 
 public class tema2 {
@@ -31,6 +28,7 @@ public class tema2 {
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			COOLParser parser = new COOLParser(tokens);
 			parser.program();
+			System.in.read();
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err
@@ -52,7 +50,7 @@ public class tema2 {
 	 */
 	public static void main(String[] args) {
 		//runBatteryOfTests(simpleTestsRoot);
-		//runBatteryOfTests(advancedTestsRoot);
-		runBatteryOfTests(complexTestsRoot);
+		runBatteryOfTests(advancedTestsRoot);
+		//runBatteryOfTests(complexTestsRoot);
 	}
 }
