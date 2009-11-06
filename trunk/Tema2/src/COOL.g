@@ -1,4 +1,14 @@
-grammar COOL;
+grammar cool;
+
+/*options {
+	output = AST;
+	ASTLabelType = CommonTree;
+}
+
+tokens {
+	CLASS_T;
+	ASSIGN_T;
+}*/
 
 program	
 	:
@@ -7,7 +17,7 @@ program
 
 class_stat	
 	:	
-	CLASS_ST TYPE (INHERITS_ST TYPE)? '{' (feature ';')* '}'
+	CLASS_ST t=TYPE (INHERITS_ST TYPE)? '{' (feature ';')* '}'
 	;	
 
 feature	
@@ -21,7 +31,7 @@ formal
 	ID ':' TYPE
 	;
 
-expr
+expr	
 	:	
 	(ID '<-' expr 
 	| TRUE_ST 
@@ -34,7 +44,7 @@ expr
 	| IF_ST expr THEN_ST expr ELSE_ST expr FI_ST 
 	| WHILE_ST expr LOOP_ST expr POOL_ST 
 	| CASE_ST expr OF_ST (ID ':' TYPE '=>' expr ';')+ ESAC_ST 
-	| LET_ST ID ':' TYPE ('<-' expr)? (',' ID ':' TYPE ('<-' expr)?)* IN_ST expr
+	| LET_ST ID ':' TYPE ('<-' expr)? (',' ID ':' TYPE ('<-' expr)?)* IN_ST expr 
 	| '(' expr ')' 
 	| NOT_ST expr 
 	| STRING 
@@ -51,7 +61,25 @@ expr
 	| '>=' expr 
 	| '=' expr)*
 	;
-	
+
+MULTI_COMMENT
+	:	'(*'
+		{
+			$channel=HIDDEN;
+		}
+		(	~('('|'*')
+			|	('(' ~'*') => '('
+			|	('*' ~')') => '*'
+			|	MULTI_COMMENT
+		)*
+		'*)'
+	;
+
+SINGLE_COMMENT
+	:	'--' (~'\n')* {$channel=HIDDEN;}
+	;
+
+
 CLASS_ST
 	:
 	('C' | 'c')('L' | 'l')('A' | 'a')('S' | 's')('S' | 's')
@@ -148,15 +176,15 @@ NOT_ST
 	;
 
 TYPE	
-	:
-	'SELF_TYPE'
-	|
+	:	
 	('A'..'Z')
 	(('a'..'z') | ('A'..'Z'))*
 	;
 	
 ID	
-	:	
+	:
+	'SELF_TYPE'
+	|	
 	(('a'..'z') 
 	| ('A'..'Z')
 	| '_'
@@ -171,36 +199,20 @@ WS
         | '\n'
         ) {$channel=HIDDEN;}
     	;
-
-/*STRING	
-	:	
-	'"' ~'"'* '\\\n' '"'
-	;
-*/
-
+    	
 STRING
     :
     '\"' ( ESC_SEQ | ~('\\\n' | '\"') )* '\"'
     ;
 
-CHAR
-    :
-    '\'' ( ESC_SEQ | ~('\\'|'\'') ) '\''
+fragment
+ESC_SEQ
+    :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
     ;
 
+	
 INTEGER	
 	:	
 	'0'..'9'+
 	;
 
-COMMENT
-  :
-  '(*' ( options {greedy=false;} : . )* '*)' {$channel = HIDDEN;}
-  | '--' ~('\n'|'\r')* '\r'? ('\n')* {$channel = HIDDEN;}
-  ;
-
-fragment
-ESC_SEQ
-    :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
-    ;
-  
