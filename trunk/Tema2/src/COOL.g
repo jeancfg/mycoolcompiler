@@ -1,29 +1,32 @@
 grammar cool;
 
-/*options {
-	output = AST;
-	ASTLabelType = CommonTree;
+options {
+output = AST;
+ASTLabelType = CommonTree;
 }
 
 tokens {
-	CLASS_T;
-	ASSIGN_T;
-}*/
+CLASS_T;
+ASSIGN_T;
+METHOD_T;
+BOOL_T;
+EXPR_T;
+}
 
 program	
 	:
-	(class_stat ';')+
+	(class_stat ';'!)+
 	;
 
 class_stat	
-	:	
-	CLASS_ST t=TYPE (INHERITS_ST TYPE)? '{' (feature ';')* '}'
+	:
+	CLASS_ST TYPE (INHERITS_ST TYPE)? '{' (feature ';')* '}' -> ^(CLASS_T feature+)
 	;	
 
 feature	
 	:	
-	ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' expr '}'
-	| ID ':' TYPE ('<-' expr)?
+	ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' expr '}' -> ^(METHOD_T ID ^(EXPR_T expr))
+	| ID ':' TYPE ('<-' expr)? -> ^(ASSIGN_T ID ^(EXPR_T expr?))
 	;
 
 formal 	
@@ -33,34 +36,35 @@ formal
 
 expr	
 	:	
-	(ID '<-' expr 
-	| TRUE_ST 
-	| FALSE_ST 
+	(ID '<-'^ expr// -> ^(ASSIGN_T ID expr)
+	| TRUE_ST^    // -> ^(BOOL_T TRUE_ST)
+	| FALSE_ST^    //-> ^(BOOL_T FALSE_ST)
 	| ID '(' (expr (',' expr)*)? ')' 
-	| '{' (expr ';')+ '}' 
-	| '~' expr 
-	| ISVOID_ST expr 
-	| NEW_ST TYPE 
-	| IF_ST expr THEN_ST expr ELSE_ST expr FI_ST 
-	| WHILE_ST expr LOOP_ST expr POOL_ST 
-	| CASE_ST expr OF_ST (ID ':' TYPE '=>' expr ';')+ ESAC_ST 
-	| LET_ST ID ':' TYPE ('<-' expr)? (',' ID ':' TYPE ('<-' expr)?)* IN_ST expr 
-	| '(' expr ')' 
-	| NOT_ST expr 
-	| STRING 
-	| INTEGER 
-	| ID) 
+	| '{'^ (expr ';'!)+ '}' 
+	| '~'^ expr 
+	| ISVOID_ST^ expr 
+	| NEW_ST^ TYPE 
+	| IF_ST^ expr THEN_ST expr ELSE_ST expr FI_ST 
+	| WHILE_ST^ expr LOOP_ST expr POOL_ST! 
+	| CASE_ST^ expr OF_ST! (ID ':' TYPE '=>' expr ';')+ ESAC_ST! 
+	| LET_ST^ ID ':'! TYPE ('<-' expr)? (',' ID ':' TYPE ('<-' expr)?)* IN_ST! expr 
+	| '('! expr ')'! 
+	| NOT_ST^ expr
+	| STRING^ 
+	| INTEGER^
+	| ID^)
 	(('@' TYPE)? '.' ID '(' (expr (',' expr)*)? ')' 
-	| '+' expr 
-	| '-' expr 
-	| '*' expr 
-	| '/' expr 
-	| '<' expr
-	| '<=' expr 
-	| '>' expr 
-	| '>=' expr 
-	| '=' expr)*
+	| '+'^ expr
+	| '-'^ expr 
+	| '*'^ expr 
+	| '/'^ expr 
+	| '<'^ expr
+	| '<='^ expr 
+	| '>'^ expr 
+	| '>='^ expr 
+	| '='^ expr)*
 	;
+	
 
 MULTI_COMMENT
 	:	'(*'
