@@ -1,72 +1,113 @@
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
-import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.CommonTree;
-import org.antlr.runtime.tree.Tree;
-
-/**
- * Tema 2 CPL
- */
-
-/**
- * TODO:
- */
+import org.antlr.runtime.tree.CommonTreeNodeStream;
 
 public class COOLParser {
-	private static final String COOL_SOURCE_FILE = ".cl";
 
-	public static final String simpleTestsRoot = "teste/_tests/simple/";
-	public static final String advancedTestsRoot = "teste/_tests/advanced/";
-	public static final String complexTestsRoot = "teste/_tests/complex/";
+	/**
+	 * TODO: Feel free to change or rewrite the entire structure below,
+	 * according to your needs. It is just a sample starting point, that
+	 * successfully uses the available API.
+	 */
 
-	// private static final String errorsTestsRoot = "teste/_tests/errors/";
-	// private static final String bonusTestsRoot = "teste/_tests/bonus/";
+	public static CommonTokenStream prepareParsing(InputStream is)
+			throws IOException {
+		ANTLRInputStream input = new ANTLRInputStream(is);
+		COOLTreeBuilderLexer lexer = new COOLTreeBuilderLexer(input);
 
-	public static void runTest(String inputFileName) {
-		try {
-			String outputFileName = inputFileName.replace(".cl", ".ast");
-			System.out.println("Running grammer on test " + inputFileName);
-			ANTLRFileStream input = new ANTLRFileStream(inputFileName);
-			COOLTreeBuilderLexer lexer = new COOLTreeBuilderLexer(input);
-			CommonTokenStream tokens = new CommonTokenStream(lexer);
-			COOLTreeBuilderParser parser = new COOLTreeBuilderParser(tokens);
-			COOLTreeBuilderParser.program_return r = parser.program();
-			System.out.println(((CommonTree) r.getTree()).toStringTree());
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.err
-					.println("Ai dat fisierul de intrare ca prim parametru ?");
-		}
+		CommonTokenStream tokenStream = new CommonTokenStream(lexer);
 
+		return tokenStream;
 	}
 
-	public static void runBatteryOfTests(String root) {
-		File tests = new File(root);
-		for (File inputFile : tests.listFiles()) {
-			if (inputFile.getName().endsWith(COOL_SOURCE_FILE)) {
-				runTest(inputFile.getAbsolutePath());
-				try {
-					System.in.read();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+	public static CommonTree buildCOOLTree(InputStream is) throws IOException,
+			RecognitionException {
+		CommonTokenStream tokenStream = prepareParsing(is);
+
+		COOLTreeBuilderParser parser = new COOLTreeBuilderParser(tokenStream);
+
+		COOLTreeBuilderParser.program_return retVal = parser.program();
+
+		return (CommonTree) retVal.getTree();
+	}
+
+	public static void generateOutputData(Classes cl, CommonTree ast,
+			String fileName) throws RecognitionException {
+		CommonTreeNodeStream nodeStream = new CommonTreeNodeStream(ast);
+
+		COOLTreeChecker checker = new COOLTreeChecker(nodeStream);
+		checker.setFileName(fileName);
+
+		checker.program(cl);
 	}
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// runBatteryOfTests(simpleTestsRoot);
-		// runBatteryOfTests(advancedTestsRoot);
-		// runBatteryOfTests(complexTestsRoot);
-		runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/attributes.cl");
-		// runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/inheritance.cl");
-		// runTest(advancedTestsRoot + "ml-comments.cl");
-		// runTest(simpleTestsRoot + "my-ml-comments.cl");
-		// runTest(simpleTestsRoot + "attributes.cl");
+		/*
+		 * There should be one class list per program. This list would collect
+		 * the classes from all the source files that mycoolc takes at the
+		 * command line.
+		 */
+		Classes cl = new Classes(1);
+		Program prg = new program(1, cl);
+
+		// Command line processing (you may modify it at will)
+		args = Flags.handleFlags(args);
+
+		/*
+		 * TODO: You can change the code below and implement a different
+		 * strategy, such as concatenating input source files and then analyzing
+		 * them as a whole using ANTLR.
+		 * 
+		 * The current strategy creates an ANTLR AST for each compilation file,
+		 * and during tree parsing, each detected class is added to the global
+		 * class list. Note that this strategy needs additional semantic
+		 * checking after all the classes have been added to the list.
+		 */
+
+		try {
+
+			for (String fname : args) { // Iterate through the input file names
+				CommonTree rootNode = null;
+				FileInputStream fis = new FileInputStream(fname);
+
+				rootNode = buildCOOLTree(fis); // Build the ANTLR AST
+
+				// Parse the AST and add the partial results to the class list
+				generateOutputData(cl, rootNode, fname);
+
+				fis.close();
+			}
+
+			/*
+			 * TODO: You MAY need to perform additional semantic checking here,
+			 * if you have multiple files. For this to happen, implement
+			 * 
+			 * prg.semant()
+			 * 
+			 * and additional semant() methods in each of the classes in
+			 * cool-tree.java.
+			 */
+
+			// prg.semant()
+
+			// Important: Do not remove this line!
+			prg.dump_with_types(System.out, 0);
+
+		} catch (IOException ex) {
+			// TODO: Implement your own exception handling here
+			ex.printStackTrace();
+		} catch (RecognitionException ex) {
+			ex.printStackTrace();
+		}
+
 	}
 }
