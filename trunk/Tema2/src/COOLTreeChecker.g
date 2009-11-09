@@ -21,7 +21,8 @@ program [Classes cl]
 	;
 	
 classdef returns [class_ result]
-	: ^(CLASS name=TYPE_ID features)
+	:
+	^(CLASS name=TYPE_ID features)
 	{
 		$result = new class_($CLASS.line,
 			AbstractTable.idtable.addString($name.text),

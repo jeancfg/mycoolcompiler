@@ -56,6 +56,7 @@ public class Debugger {
 			FileInputStream fis = new FileInputStream(fname);
 
 			rootNode = COOLParser.buildCOOLTree(fis); // Build the ANTLR AST
+			System.out.println(rootNode.toStringTree());
 
 			// Parse the AST and add the partial results to the class list
 			COOLParser.generateOutputData(cl, rootNode, fname);
