@@ -1,4 +1,4 @@
-grammar cool;
+grammar COOL;
 
 options {
 output = AST;
@@ -13,14 +13,23 @@ BOOL_T;
 EXPR_T;
 }
 
+@lexer::members
+{
+  int counter = 0;
+  boolean error = false;
+}
+
 program	
 	:
 	(class_stat ';'!)+
+	{
+	 System.out.println($program.tree);
+	}
 	;
 
 class_stat	
 	:
-	CLASS_ST TYPE (INHERITS_ST TYPE)? '{' (feature ';')* '}' -> ^(CLASS_T feature+)
+	CLASS_ST TYPE (INHERITS_ST TYPE)? '{' (feature ';')* '}' -> ^(CLASS_T feature*)
 	;	
 
 feature	
@@ -64,19 +73,18 @@ expr
 	| '>='^ expr 
 	| '='^ expr)*
 	;
-	
 
 MULTI_COMMENT
 	:	'(*'
-		{
-			$channel=HIDDEN;
-		}
 		(	~('('|'*')
 			|	('(' ~'*') => '('
 			|	('*' ~')') => '*'
 			|	MULTI_COMMENT
 		)*
 		'*)'
+    {
+      $channel=HIDDEN;
+    }
 	;
 
 SINGLE_COMMENT
@@ -181,28 +189,20 @@ NOT_ST
 
 TYPE	
 	:	
-	('A'..'Z')
-	(('a'..'z') | ('A'..'Z'))*
+	(('A'..'Z')
+	(('a'..'z') | ('A'..'Z') | '1'..'9')*)
+	|
+	'SELF_TYPE'
 	;
 	
 ID	
 	:
-	'SELF_TYPE'
-	|	
 	(('a'..'z') 
 	| ('A'..'Z')
 	| '_'
+	| ('1'..'9')
 	)+
 	;
-	
-WS  
-	:   
-	( ' '
-        | '\t'
-        | '\r'
-        | '\n'
-        ) {$channel=HIDDEN;}
-    	;
     	
 STRING
     :
@@ -219,4 +219,12 @@ INTEGER
 	:	
 	'0'..'9'+
 	;
-
+  
+WS  
+  :   
+  ( ' '
+        | '\t'
+        | '\r'
+        | '\n'
+        ) {$channel=HIDDEN;}
+      ;
