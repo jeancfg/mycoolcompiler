@@ -21,8 +21,7 @@ program [Classes cl]
 	;
 	
 classdef returns [class_ result]
-	:
-	^(CLASS name=TYPE_ID features)
+	: ^(CLASS_T name=TYPE features)
 	{
 		$result = new class_($CLASS.line,
 			AbstractTable.idtable.addString($name.text),
@@ -31,7 +30,7 @@ classdef returns [class_ result]
 			AbstractTable.stringtable.addString(getFileName()));
 			
 	}
-	| ^(CLASS name=TYPE_ID parent=TYPE_ID features)
+	| ^(CLASS_T name=TYPE parent=TYPE features)
 	{
 		$result = new class_($CLASS.line,
 			AbstractTable.idtable.addString($name.text),
@@ -42,13 +41,13 @@ classdef returns [class_ result]
 	;
 	
 features returns [Features result]
-	: ^(FEATURES { $result = new Features($FEATURES.line); } 
+	: ^(FEATURES_T { $result = new Features($FEATURES.line); } 
 		//(feature { $result.appendElement($feature.result); })*
 	   )
 	;
 	
 feature returns [Feature result]
-	: // TODO: Continue on your own from here
+	: 
 	;
 
 
