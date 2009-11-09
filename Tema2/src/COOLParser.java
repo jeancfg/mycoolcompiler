@@ -17,14 +17,14 @@ import org.antlr.runtime.tree.Tree;
 public class COOLParser {
 	private static final String COOL_SOURCE_FILE = ".cl";
 
-	private static final String simpleTestsRoot = "teste/_tests/simple/";
-	private static final String advancedTestsRoot = "teste/_tests/advanced/";
-	private static final String complexTestsRoot = "teste/_tests/complex/";
+	public static final String simpleTestsRoot = "teste/_tests/simple/";
+	public static final String advancedTestsRoot = "teste/_tests/advanced/";
+	public static final String complexTestsRoot = "teste/_tests/complex/";
 
 	// private static final String errorsTestsRoot = "teste/_tests/errors/";
 	// private static final String bonusTestsRoot = "teste/_tests/bonus/";
 
-	private static void runTest(String inputFileName) {
+	public static void runTest(String inputFileName) {
 		try {
 			String outputFileName = inputFileName.replace(".cl", ".ast");
 			System.out.println("Running grammer on test " + inputFileName);
@@ -42,7 +42,7 @@ public class COOLParser {
 
 	}
 
-	private static void runBatteryOfTests(String root) {
+	public static void runBatteryOfTests(String root) {
 		File tests = new File(root);
 		for (File inputFile : tests.listFiles()) {
 			if (inputFile.getName().endsWith(COOL_SOURCE_FILE)) {

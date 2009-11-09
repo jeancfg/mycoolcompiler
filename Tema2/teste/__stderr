@@ -1,5 +1,5 @@
-Exception in thread "main" java.lang.NoClassDefFoundError: COOLParser
-Caused by: java.lang.ClassNotFoundException: COOLParser
+Exception in thread "main" java.lang.NoClassDefFoundError: org/antlr/runtime/CharStream
+Caused by: java.lang.ClassNotFoundException: org.antlr.runtime.CharStream
 	at java.net.URLClassLoader$1.run(URLClassLoader.java:200)
 	at java.security.AccessController.doPrivileged(Native Method)
 	at java.net.URLClassLoader.findClass(URLClassLoader.java:188)
