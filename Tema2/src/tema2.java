@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.IOException;
 
 import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -17,9 +18,10 @@ public class tema2 {
 	private static final String simpleTestsRoot = "teste/_tests/simple/";
 	private static final String advancedTestsRoot = "teste/_tests/advanced/";
 	private static final String complexTestsRoot = "teste/_tests/complex/";
-	//private static final String errorsTestsRoot = "teste/_tests/errors/";
-	//private static final String bonusTestsRoot = "teste/_tests/bonus/";
-	
+
+	// private static final String errorsTestsRoot = "teste/_tests/errors/";
+	// private static final String bonusTestsRoot = "teste/_tests/bonus/";
+
 	private static void runTest(String inputFileName) {
 		try {
 			System.out.println("Running grammer on test " + inputFileName);
@@ -28,7 +30,6 @@ public class tema2 {
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			COOLParser parser = new COOLParser(tokens);
 			parser.program();
-			System.in.read();
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err
@@ -36,12 +37,18 @@ public class tema2 {
 		}
 
 	}
-	
+
 	private static void runBatteryOfTests(String root) {
 		File tests = new File(root);
 		for (File inputFile : tests.listFiles()) {
-			if (inputFile.getName().endsWith(COOL_SOURCE_FILE))
+			if (inputFile.getName().endsWith(COOL_SOURCE_FILE)) {
 				runTest(inputFile.getAbsolutePath());
+				try {
+					System.in.read();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 
@@ -50,7 +57,12 @@ public class tema2 {
 	 */
 	public static void main(String[] args) {
 		//runBatteryOfTests(simpleTestsRoot);
-		runBatteryOfTests(advancedTestsRoot);
+		//runBatteryOfTests(advancedTestsRoot);
 		//runBatteryOfTests(complexTestsRoot);
+		//runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/multifile-1.cl");
+		runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/inheritance.cl");
+		// runTest(advancedTestsRoot + "ml-comments.cl");
+		// runTest(simpleTestsRoot + "my-ml-comments.cl");
+		// runTest(simpleTestsRoot + "attributes.cl");
 	}
 }
