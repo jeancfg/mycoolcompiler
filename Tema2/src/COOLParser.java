@@ -34,7 +34,6 @@ public class COOLParser {
 			COOLTreeBuilderParser parser = new COOLTreeBuilderParser(tokens);
 			COOLTreeBuilderParser.program_return r = parser.program();
 			System.out.println(((CommonTree) r.getTree()).toStringTree());
-			// new COOLWalker((Tree) r.getTree(), outputFileName).generateAST();
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err
