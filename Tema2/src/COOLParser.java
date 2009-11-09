@@ -3,6 +3,8 @@ import java.io.IOException;
 
 import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.tree.CommonTree;
+import org.antlr.runtime.tree.Tree;
 
 /**
  * Tema 2 CPL
@@ -12,7 +14,7 @@ import org.antlr.runtime.CommonTokenStream;
  * TODO:
  */
 
-public class tema2 {
+public class COOLParser {
 	private static final String COOL_SOURCE_FILE = ".cl";
 
 	private static final String simpleTestsRoot = "teste/_tests/simple/";
@@ -24,12 +26,15 @@ public class tema2 {
 
 	private static void runTest(String inputFileName) {
 		try {
+			String outputFileName = inputFileName.replace(".cl", ".ast");
 			System.out.println("Running grammer on test " + inputFileName);
 			ANTLRFileStream input = new ANTLRFileStream(inputFileName);
-			COOLLexer lexer = new COOLLexer(input);
+			COOLTreeBuilderLexer lexer = new COOLTreeBuilderLexer(input);
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
-			COOLParser parser = new COOLParser(tokens);
-			parser.program();
+			COOLTreeBuilderParser parser = new COOLTreeBuilderParser(tokens);
+			COOLTreeBuilderParser.program_return r = parser.program();
+			System.out.println(((CommonTree) r.getTree()).toStringTree());
+			// new COOLWalker((Tree) r.getTree(), outputFileName).generateAST();
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err
@@ -56,11 +61,11 @@ public class tema2 {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		//runBatteryOfTests(simpleTestsRoot);
-		//runBatteryOfTests(advancedTestsRoot);
-		//runBatteryOfTests(complexTestsRoot);
-		//runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/multifile-1.cl");
-		runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/inheritance.cl");
+		// runBatteryOfTests(simpleTestsRoot);
+		// runBatteryOfTests(advancedTestsRoot);
+		// runBatteryOfTests(complexTestsRoot);
+		runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/attributes.cl");
+		// runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/inheritance.cl");
 		// runTest(advancedTestsRoot + "ml-comments.cl");
 		// runTest(simpleTestsRoot + "my-ml-comments.cl");
 		// runTest(simpleTestsRoot + "attributes.cl");
