@@ -6,8 +6,8 @@ ASTLabelType = CommonTree;
 }
 
 tokens {
-CLASS;                  // tipul clasa
-INHERITS_T;             // tipul clasa de baza ^(A ^(INHERITS_T B)) => A extends B
+CLASS_T;                // tipul clasa
+FEATURES_T;
 ASSIGN_T;
 METHOD_T;
 BOOL_T;
@@ -25,13 +25,13 @@ program
 class_stat	
 	:
 	CLASS_ST name=TYPE (INHERITS_ST baseClass=TYPE)? '{' (feature ';')* '}'
-	 -> ^(CLASS $name $baseClass? ^(feature)*)
+	 -> ^(CLASS_T $name $baseClass? ^(FEATURES_T feature)*)
 	;
 
 feature	
 	:	
-	ID '(' (formal (',' formal)*)? ')' ':' TYPE '{' expr '}'
-	 -> ^(METHOD_T ID ^(RETURN_TYPE_T TYPE) ^(TYPE_ID formal*) ^(EXPR_T expr))
+	ID '(' (formal (',' formal)*)? ')' ':' type=TYPE '{' expr '}'
+	 -> ^(METHOD_T ID ^(RETURN_TYPE_T $type) ^(TYPE_ID formal*) ^(EXPR_T expr))
 	|
 	ID ':' TYPE ('<-' expr)?
 	 -> ^(ASSIGN_T ID ^(TYPE_ID TYPE) ^(EXPR_T expr?))
