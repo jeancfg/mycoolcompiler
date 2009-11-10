@@ -7,6 +7,8 @@ ASTLabelType = CommonTree;
 
 tokens {
 CLASS_T;                // tipul clasa
+BLOCK_T;                // tipul block
+CALL_T;                 // tipul apel de functie
 FEATURES_T;
 ASSIGN_T;
 METHOD_T;
@@ -15,6 +17,12 @@ EXPR_T;                 // tipul expresie
 RETURN_TYPE_T;          // tipul intors de o functie
 TYPE_ID;                // tipul unui obiect
 FORMAL_T;
+ATTR_T;                 // tipul atribut
+ID_T;                   // tipul id
+OP_T;                   // tipul operator
+}
+
+@members {
 }
 
 program	
@@ -25,7 +33,7 @@ program
 class_stat	
 	:
 	CLASS_ST name=TYPE (INHERITS_ST baseClass=TYPE)? '{' (feature ';')* '}'
-	 -> ^(CLASS_T $name $baseClass? ^(FEATURES_T feature)*)
+	 -> ^(CLASS_T $name $baseClass? ^(FEATURES_T feature*))
 	;
 
 feature	
@@ -34,7 +42,7 @@ feature
 	 -> ^(METHOD_T ID ^(RETURN_TYPE_T $type) ^(TYPE_ID formal*) ^(EXPR_T expr))
 	|
 	ID ':' TYPE ('<-' expr)?
-	 -> ^(ASSIGN_T ID ^(TYPE_ID TYPE) ^(EXPR_T expr?))
+	 -> ^(ATTR_T ID TYPE ^(EXPR_T expr?))
 	;
 
 formal 	
@@ -44,35 +52,97 @@ formal
 
 expr	
 	:	
-	(ID '<-'^ expr
-	| TRUE_ST^
-	| FALSE_ST^
-	| ID '(' (expr (',' expr)*)? ')' 
-	| '{'^ (expr ';'!)+ '}' 
-	| '~'^ expr 
-	| ISVOID_ST^ expr 
-	| NEW_ST^ TYPE 
-	| IF_ST^ expr THEN_ST expr ELSE_ST expr FI_ST 
-	| WHILE_ST^ expr LOOP_ST expr POOL_ST! 
-	| CASE_ST^ expr OF_ST! (ID ':' TYPE '=>' expr ';')+ ESAC_ST! 
-	| LET_ST^ ID ':'! TYPE ('<-' expr)? (',' ID ':' TYPE ('<-' expr)?)* IN_ST! expr 
-	| '('! expr ')'! 
-	| NOT_ST^ expr
-	| STRING^ 
-	| INTEGER^
-	| ID^)
-	(('@' TYPE)? '.' ID '(' (expr (',' expr)*)? ')' 
-	| '+'^ expr
-	| '-'^ expr 
-	| '*'^ expr 
-	| '/'^ expr 
-	| '<'^ expr
-	| '<='^ expr 
-	| '>'^ expr 
-	| '>='^ expr 
-	| '='^ expr)*
+  assignExpr
 	;
+ 
+assignExpr
+  :
+  ID '<-'^ assignExpr
+  |
+  notExpr
+  ;
 
+notExpr
+  :
+  (NOT_ST^ notExpr)
+  |
+  relExpr
+  ;
+
+relExpr
+  :
+  sumExpr
+  (
+    ('<'^ sumExpr)
+    |
+    ('<='^ sumExpr)
+    |
+    ('='^ sumExpr)
+  )*
+  ;
+
+sumExpr
+  :
+  multExpr
+  (
+    ('+'^ multExpr)
+    |
+    ('-'^ multExpr)
+  )*
+  ;
+
+multExpr
+  :
+  isVoidExpr
+  (
+    ('*'^ isVoidExpr)
+    |
+    ('/'^ isVoidExpr)
+  )*
+  ;
+
+isVoidExpr
+  :
+  (ISVOID_ST^ isVoidExpr)
+  |
+  tildaExpr
+  ;
+
+tildaExpr
+  :
+  ('~'^ tildaExpr)
+  |
+  dispatchExpr
+  ;
+
+dispatchExpr
+  :
+  atom ('@'^ TYPE)? ('.'^ dispatchExprAux)*
+  ;
+
+dispatchExprAux
+  :
+  ID '('! (expr (','! expr)*)? ')'!
+  ;
+
+atom
+  :   INTEGER
+  |   ID
+  |   '('! expr ')'!
+  |   TRUE_ST
+  |   FALSE_ST
+  |   STRING
+  |   ID '(' (expr (',' expr)*)? ')' -> ^(CALL_T ID expr*)
+  |  '{' (expr ';')+ '}' -> ^(BLOCK_T expr+)
+  |   NEW_ST^ TYPE
+  |   IF_ST^ expr THEN_ST expr ELSE_ST expr FI_ST 
+  |   WHILE_ST^ expr LOOP_ST! expr POOL_ST! 
+  |   CASE_ST^ expr OF_ST! (ID ':' TYPE '=>' expr ';')+ ESAC_ST! 
+  |   LET_ST^ ID ':'! TYPE ('<-' expr)? (',' ID ':'! TYPE ('<-' expr)?)* IN_ST! expr 
+  
+  ;
+
+  
 MULTI_COMMENT
 	:	'(*'
 		(	~('('|'*')
@@ -205,7 +275,12 @@ ID
     	
 STRING
     :
-    '\"' ( ESC_SEQ | ~('\\\n' | '\"') )* '\"'
+    '\"'
+    (
+      (ESC_SEQ) => ESC_SEQ
+    	|
+      ~('\\\n' | '\"')
+    )* '\"'
     ;
 
 fragment
@@ -213,8 +288,7 @@ ESC_SEQ
     :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
     ;
 
-	
-INTEGER	
+INTEGER
 	:	
 	'0'..'9'+
 	;

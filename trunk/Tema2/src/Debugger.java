@@ -59,7 +59,7 @@ public class Debugger {
 			System.out.println(rootNode.toStringTree());
 
 			// Parse the AST and add the partial results to the class list
-			COOLParser.generateOutputData(cl, rootNode, fname);
+			// COOLParser.generateOutputData(cl, rootNode, fname);
 
 			fis.close();
 		} catch (Exception e) {
@@ -73,16 +73,18 @@ public class Debugger {
 	public static void main(String[] args) {
 		Classes cl = new Classes(1);
 		Program prg = new program(1, cl);
-
-		// runBatteryOfTests(simpleTestsRoot);
-		// runBatteryOfTests(advancedTestsRoot);
-		// runBatteryOfTests(complexTestsRoot);
-		//runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/attributes.cl");
+		// test(
+		// "/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/attributes.cl",
+		// cl);
+		runBatteryOfTests(simpleTestsRoot);
+		runBatteryOfTests(advancedTestsRoot);
+		runBatteryOfTests(complexTestsRoot);
+		// runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/advanced/random_expressions.cl");
 		// runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/inheritance.cl");
 		// runTest(advancedTestsRoot + "ml-comments.cl");
 		// runTest(simpleTestsRoot + "my-ml-comments.cl");
 		// runTest(simpleTestsRoot + "attributes.cl");
-		test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/sl-comments.cl", cl);
-		prg.dump_with_types(System.out, 0);
+
+		// prg.dump_with_types(System.out, 0);
 	}
 }
