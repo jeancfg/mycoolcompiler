@@ -82,7 +82,7 @@ public class Debugger {
 		// runTest(advancedTestsRoot + "ml-comments.cl");
 		// runTest(simpleTestsRoot + "my-ml-comments.cl");
 		// runTest(simpleTestsRoot + "attributes.cl");
-		test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/attributes.cl", cl);
+		test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/sl-comments.cl", cl);
 		prg.dump_with_types(System.out, 0);
 	}
 }
