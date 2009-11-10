@@ -58,16 +58,24 @@ feature returns [Feature result]
   :
   ^(METHOD_T name=ID returnType formals expr)
   {
+    $expr.result.set_type(new IdSymbol($returnType.returnStr, 3, 0));
     $result = new method($METHOD_T.line, new IdSymbol($name.text, $name.text.length(), 0),
         $formals.result, $returnType.result, $expr.result);
   }
+  |
+  ^(ATTR_T name=ID type=TYPE expr)
+  {
+    $result = new attr($ATTR_T.line, new IdSymbol($name.text, $name.text.length(), 0),
+      new IdSymbol($type.text, $type.text.length(), 0), $expr.result);    
+  }
   ;
 
-returnType returns [AbstractSymbol result]
+returnType returns [AbstractSymbol result, String returnStr]
   :
   ^(RETURN_TYPE_T type=TYPE)
   {
     $result = new IdSymbol($type.text, $type.text.length(), 0);
+    $returnStr = $type.text;
   }
   ;
 
@@ -100,6 +108,24 @@ expr returns [Expression result]
   :
   ^(EXPR_T INTEGER)
   {
-    $result = new string_const($EXPR_T.line, new StringSymbol($INTEGER.text, $INTEGER.text.length(), 0)); 
+    $result = new int_const($EXPR_T.line, new IntSymbol($INTEGER.text, $INTEGER.text.length(), 0));
+  }
+  |
+  ^(EXPR_T op)
+  ;
+
+op returns [Expression result]
+  :
+  ^(OP_T '+' e1=id e2=id)
+  {
+    //$result = ;
+  }
+  ;
+
+id returns [AbstractSymbol result]
+  :
+  ^(ID_T ID)
+  {
+    $result = new IdSymbol($ID.text, $ID.text.length(), 0);
   }
   ;
