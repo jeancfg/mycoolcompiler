@@ -42,7 +42,7 @@ feature
 	 -> ^(METHOD_T ID ^(RETURN_TYPE_T $type) ^(TYPE_ID formal*) ^(EXPR_T expr))
 	|
 	ID ':' TYPE ('<-' expr)?
-	 -> ^(ATTR_T ID TYPE ^(EXPR_T expr?))
+	 -> ^(ATTR_T ID TYPE ^(EXPR_T expr)?)
 	;
 
 formal 	
@@ -73,11 +73,9 @@ relExpr
   :
   sumExpr
   (
-    ('<'^ sumExpr)
-    |
-    ('<='^ sumExpr)
-    |
-    ('='^ sumExpr)
+    ('<=') => '<='^ sumExpr
+    '<'^ sumExpr
+    '='^ sumExpr
   )*
   ;
 
@@ -85,9 +83,9 @@ sumExpr
   :
   multExpr
   (
-    ('+'^ multExpr)
+    ('+') => '+'^ multExpr
     |
-    ('-'^ multExpr)
+    ('-') => '-'^ multExpr
   )*
   ;
 
@@ -95,9 +93,9 @@ multExpr
   :
   isVoidExpr
   (
-    ('*'^ isVoidExpr)
+    ('*') => '*'^ isVoidExpr
     |
-    ('/'^ isVoidExpr)
+    ('/') => ('/'^ isVoidExpr)
   )*
   ;
 
@@ -117,7 +115,12 @@ tildaExpr
 
 dispatchExpr
   :
-  atom ('@'^ TYPE)? ('.'^ dispatchExprAux)*
+  (
+    (atom '@'^ TYPE) => atom '@'^ TYPE
+    |
+    atom
+  )
+  (('.' dispatchExprAux) => '.'^ dispatchExprAux)*
   ;
 
 dispatchExprAux
