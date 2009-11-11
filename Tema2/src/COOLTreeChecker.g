@@ -48,62 +48,33 @@ features returns [Features result]
   :
   ^(
     FEATURES_T { $result = new Features($FEATURES_T.line); }
-    (
-      feature { $result.appendElement($feature.result); }
-    )*
+    //(
+      //feature { $result.appendElement($feature.result); }
+    //)*
    )
   ;
 
 feature returns [Feature result]
   :
-  ^(METHOD_T name=ID returnType formals expr)
+//  ^(METHOD_T name=ID returnType formals expr)
+//  {
+//    $expr.result.set_type(new IdSymbol($returnType.returnStr, 3, 0));
+//    $result = new method($METHOD_T.line, new IdSymbol($name.text, $name.text.length(), 0),
+//        $formals.result, $returnType.result, $expr.result);
+//  }
+//  |
+  ^(a = ATTR_T name=ID type=TYPE)
   {
-    $expr.result.set_type(new IdSymbol($returnType.returnStr, 3, 0));
-    $result = new method($METHOD_T.line, new IdSymbol($name.text, $name.text.length(), 0),
-        $formals.result, $returnType.result, $expr.result);
+    System.out.println("AJUNG AICI");
   }
   |
-  ^(ATTR_T name=ID type=TYPE expr)
+  ^(a = ATTR_T name=ID type=TYPE expr)
   {
-    $result = new attr($ATTR_T.line, new IdSymbol($name.text, $name.text.length(), 0),
+    $result = new attr($a.line, new IdSymbol($name.text, $name.text.length(), 0),
       new IdSymbol($type.text, $type.text.length(), 0), $expr.result);    
-  }
+  }  
   ;
 
-returnType returns [AbstractSymbol result, String returnStr]
-  :
-  ^(RETURN_TYPE_T type=TYPE)
-  {
-    $result = new IdSymbol($type.text, $type.text.length(), 0);
-    $returnStr = $type.text;
-  }
-  ;
-
-//$result = new Formals($formal.line);
-formals returns [Formals result]
-@init
-{
-  $result = new Formals(0);
-}
-  :
-  ^(TYPE_ID (formal {
-    $result.addElement($formal.result); } )*)
-  ;
-  
-formal returns [Formal result]
-  :
-  ^(FORMAL_T ID type=TYPE)
-  {
-    $result = new formal($ID.line,
-        new IdSymbol($ID.text, $ID.text.length(), 0),
-        new StringSymbol($type.text, $type.text.length(), 0));
-  }
-  ;
-  
-exprs returns [Expressions result]
-  :
-  ;
-  
 expr returns [Expression result]
   :
   ^(EXPR_T INTEGER)
@@ -111,21 +82,8 @@ expr returns [Expression result]
     $result = new int_const($EXPR_T.line, new IntSymbol($INTEGER.text, $INTEGER.text.length(), 0));
   }
   |
-  ^(EXPR_T op)
-  ;
-
-op returns [Expression result]
-  :
-  ^(OP_T '+' e1=id e2=id)
+  ^(EXPR_T STRING)
   {
-    //$result = ;
-  }
-  ;
-
-id returns [AbstractSymbol result]
-  :
-  ^(ID_T ID)
-  {
-    $result = new IdSymbol($ID.text, $ID.text.length(), 0);
+    $result = new string_const($EXPR_T.line, new StringSymbol($STRING.text, $STRING.text.length(), 0));
   }
   ;
