@@ -72,9 +72,17 @@ public class Debugger {
 	 */
 	public static void main(String[] args) {
 		Classes cl = new Classes(1);
-		Program prg = new program(1, cl);
+		Program prg = new program(11, cl);
+		System.out
+				.println(normalize("\"This is\\\n\t(* a literal *)\\\n\ttoo\""));
+		System.out
+				.println(normalize("\"\\a\\b\\c\\d\\e\\f\\g\\h\\i\\j\\k\\l\\m\\n\\o\\p\\q\\r\\s\\t\\u\\v\\w\\x\\y\\z\\\"\\\n\t\\'\\{\\}\\;\""));
+		System.exit(0);
+
+		//	
+
 		test(
-				"/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/attributes.cl",
+				"/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/case-insensitive.cl",
 				cl);
 		// runBatteryOfTests(simpleTestsRoot);
 		// runBatteryOfTests(advancedTestsRoot);
@@ -87,4 +95,53 @@ public class Debugger {
 
 		prg.dump_with_types(System.out, 0);
 	}
+
+	private static Character normESQ(char c) {
+		if (c == '\b')
+			return 'b';
+		if (c == '\t')
+			return 't';
+		if (c == '\n')
+			return 'n';
+		if (c == '\f')
+			return 'f';
+		if (c == '\r')
+			return 'r';
+		if (c == '\"')
+			return '\"';
+		if (c == '\'')
+			return '\'';
+		if (c == '\\')
+			return '\\';
+		return c;
+	}
+
+	public static String normalize(String str) {
+		int size = str.length();
+		StringBuffer s = new StringBuffer();
+		Character aux = null;
+
+		for (int i = 1; i < size - 1;) {
+			if (str.charAt(i) == '\\') {
+				if (i < size - 1 && (aux = normESQ(str.charAt(i + 1))) != null) {
+					s.append('\\');
+					s.append(aux);
+					i += 2;
+				} else {
+					s.append(str.charAt(++i));
+					i++;
+				}
+			} else {
+				aux = normESQ(str.charAt(i));
+
+				if (!aux.equals(str.charAt(i)))
+					s.append('\\');
+				s.append(aux);
+				i++;
+			}
+		}
+
+		return s.toString();
+	}
+
 }

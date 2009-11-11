@@ -23,16 +23,25 @@ options {
 	   result = new mul(line, __name, __expr);
 	 else if (op.equals("/"))
 	   result = new divide(line, __name, __expr);
+	 else if (op.equals("<"))
+	   result = new lt(line, __name, __expr);
+	 else if (op.equals("<="))
+	   result = new leq(line, __name, __expr);
+	 else if (op.equals("="))
+	   result = new eq(line, __name, __expr);
 	 else
 	   System.out.println("Unknown operator " + op);
 	   
 	 return result;
 	}
+	
+	private boolean isESQ(char c) {
+	   return c == 'b' || c == 't' ||
+	     c == 'n' || c == 'f' ||
+	     c == 'r' || c == '\"' ||
+	     c == '\'' || c == '\\';
+	}
 }
-
-// TODO: You have below a sample ANTLR AST parser that makes use of the tree API to
-// generate a valid tree to be serialized to the output.
-// You must extend / rewrite it to your own needs.
 
 program[Classes cl]
   :
@@ -94,45 +103,72 @@ feature returns [Feature result]
     __expr.set_type($expr.returnType);
     
     $result = new attr($ATTR_T.line, AbstractTable.idtable.addString($name.text),
-      AbstractTable.idtable.addString($type.text), null);//__expr);    
+      AbstractTable.idtable.addString($type.text), __expr);    
   }
   ;
 
 expr returns [Expression result, AbstractSymbol returnType]
   :
-  ^(EXPR_T INTEGER)
+  (^(EXPR_T bl=block) | bl=block)
   {
-    $result = new int_const($EXPR_T.line, AbstractTable.inttable.addInt(Integer.parseInt($INTEGER.text)));
-    $returnType = new IntSymbol("Int", 3, 0); 
+    $result = $bl.result;
+    $returnType = $bl.returnType;
   }
   |
-  ^(EXPR_T STRING)
+  (^(EXPR_T c=call) | c=call)
+  {
+    $result = $c.result;
+    $returnType = $c.returnType;
+  }
+  |
+  (^(EXPR_T i=INTEGER) | i=INTEGER)
+  {
+    $result = new int_const($i.line, AbstractTable.inttable.addInt(Integer.parseInt($i.text)));
+    $returnType = AbstractTable.idtable.addString("Int"); 
+  }
+  |
+  (^(EXPR_T s=STRING) | s=STRING)
   {
     // Elimin ghilimelele de la inceputul si sfarsitul string-ului
     //   "abc" => abc
-    String str = $STRING.text;    
-    str = str.substring(1, str.length() - 1);
+    String str = $s.text;
+    str = str.substring(1, str.length()-1);    
+    //str = normalize(str);
 
-    $result = new string_const($EXPR_T.line, new StringSymbol(str, str.length(), 0));
-    $returnType = new StringSymbol("String", 6, 0);
+    $result = new string_const($s.line, new StringSymbol(str, str.length(), 0));
+    $returnType = AbstractTable.idtable.addString("String");
   }
   |
-  ^(EXPR_T op)
+  (^(EXPR_T o=op) | o=op)
   {
-    $result = $op.result;
-    $returnType = $op.returnType;
+    $result = $o.result;
+    $returnType = $o.returnType;
   }
   |
-  op
+  (^(EXPR_T id=ID) | id=ID)
   {
-    $result = $op.result;
-    $returnType = $op.returnType;
+    $result = new object($id.line, AbstractTable.idtable.addString($id.text)); 
   }
   |
-  ID
+  (^(EXPR_T b=TRUE_ST) | b=TRUE_ST)
   {
-    $result = new object($ID.line, new IdSymbol($ID.text, $ID.text.length(), 0));
-    $returnType = 
+    $result = new bool_const($b.line, true);
+    $returnType = AbstractTable.idtable.addString("Bool");
+    $result.set_type($returnType);
+  }
+  |
+  (^(EXPR_T b=FALSE_ST) | b=FALSE_ST)
+  {
+    $result = new bool_const($b.line, false);
+    $returnType = AbstractTable.idtable.addString("Bool");
+    $result.set_type($returnType);
+  }
+  |
+  (^(EXPR_T l=let) | l=let)
+  {
+    $result = $l.result;
+    $returnType = $l.returnType;
+    $result.set_type($returnType);
   }
   ;
 
@@ -149,8 +185,8 @@ formal returns [formal result]
   :
   ^(TYPE_ID name=ID type=TYPE)
   {
-    AbstractSymbol __name = new IdSymbol($name.text, $name.text.length(), 0);
-    AbstractSymbol __type = new IdSymbol($type.text, $type.text.length(), 0);
+    AbstractSymbol __name = AbstractTable.idtable.addString($name.text);
+    AbstractSymbol __type = AbstractTable.idtable.addString($type.text);
     
     $result = new formal($TYPE_ID.line, __name, __type);
   }
@@ -176,24 +212,96 @@ op returns [Expression result, AbstractSymbol returnType]
     Expression __expr = null;
 
     if ($p1.type.equals("Integer"))
-      __name = new int_const($o.line, new IntSymbol($p1.result, $p1.result.length(), 0));
+      __name = new int_const($o.line, AbstractTable.inttable.addInt(Integer.parseInt($p1.result)));
     else if ($p1.type.equals("Id"))
-      __name = new object($o.line, new IdSymbol($p1.result, $p1.result.length(), 0));
+      __name = new object($o.line, AbstractTable.idtable.addString($p1.result));
 
     if ($p2.type.equals("Integer"))
-      __expr = new int_const($o.line, new IntSymbol($p2.result, $p2.result.length(), 0));
+      __expr = new int_const($o.line, AbstractTable.inttable.addInt(Integer.parseInt($p2.result)));
     else if ($p2.type.equals("Id"))
-      __expr = new object($o.line, new IdSymbol($p2.result, $p2.result.length(), 0));
+      __expr = new object($o.line, AbstractTable.idtable.addString($p2.result));
 
     applyOp($o.text, $o.line, __name, __expr);
+  }
+  |
+  ^(e='~' expr)
+  {
+    $result = new neg($e.line, $expr.result);
+    $returnType = $expr.returnType;
+  }
+  |
+  ^(NOT_ST expr)
+  {
+    $result = new comp($NOT_ST.line, $expr.result);
+    $returnType = $expr.returnType;
+  }
+  |
+  ^(ISVOID_ST expr)
+  {
+    $result = new isvoid($ISVOID_ST.line, $expr.result);
+    $returnType = $expr.returnType;
+  }
+  |
+  ^(assignStr='<-' ID expr)
+  {
+    $result = new assign($assignStr.line, AbstractTable.idtable.addString($ID.text), $expr.result);
   }
   ;
 
 op_bin returns [String text, int line]
   :
-  e = ('+' | '-' | '*' | '/')
+  ('<=') => e = '<='
   {
     $text = $e.text;
     $line = $e.line;
+  }
+  |
+  e = ('+' | '-' | '*' | '/' | '<' | '=')
+  {
+    $text = $e.text;
+    $line = $e.line;
+  }
+  ;
+
+block returns [block result, AbstractSymbol returnType]
+@init {
+  Expressions exprs = null;
+}
+  :
+  ^(BLOCK_T { exprs = new Expressions($BLOCK_T.line); $result = new block($BLOCK_T.line, exprs); } 
+    (expr { exprs.appendElement($expr.result); $returnType = $expr.returnType; } )*
+  )
+  ;
+
+call returns [dispatch result, AbstractSymbol returnType]
+@init {
+  Expressions exprs = null;
+}
+  :
+  ^(CALL_T { exprs = new Expressions($CALL_T.line); } 
+    ID {
+          Expression self_type = new object($ID.line, AbstractTable.idtable.addString("self"));
+          self_type.set_type(AbstractTable.idtable.addString("SELF_TYPE"));
+          $result = new dispatch($CALL_T.line, self_type, AbstractTable.idtable.addString($ID.text), exprs); 
+       }
+    (e2=expr { exprs.appendElement($e2.result); $returnType = $e2.returnType; } )*
+  )
+  |
+  ^(aux='.' { exprs = new Expressions($aux.line); }
+    e1=expr ID
+    {
+//        Expression self_type = new object($ID.line, AbstractTable.idtable.addString("self"));
+//        self_type.set_type(AbstractTable.idtable.addString("SELF_TYPE"));
+        $result = new dispatch($aux.line, $e1.result, AbstractTable.idtable.addString($ID.text),
+          exprs);
+    }
+    (e2=expr { exprs.appendElement($e2.result); })*)
+  ;
+  
+let returns [let result, AbstractSymbol returnType]
+  :
+  ^(LET_ST name=ID type=TYPE ('<-' e=expr)? expr)
+  {
+    ;    
   }
   ;
