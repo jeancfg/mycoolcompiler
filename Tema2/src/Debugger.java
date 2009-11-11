@@ -85,6 +85,6 @@ public class Debugger {
 		// runTest(simpleTestsRoot + "my-ml-comments.cl");
 		// runTest(simpleTestsRoot + "attributes.cl");
 
-		// prg.dump_with_types(System.out, 0);
+		prg.dump_with_types(System.out, 0);
 	}
 }

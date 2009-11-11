@@ -16,9 +16,12 @@ BOOL_T;
 EXPR_T;                 // tipul expresie
 RETURN_TYPE_T;          // tipul intors de o functie
 TYPE_ID;                // tipul unui obiect
-FORMAL_T;
+FORMALS_T;              // tipul parametri de apel al functiilor
 ATTR_T;                 // tipul atribut
+
 ID_T;                   // tipul id
+INTEGER_T;              // tipul integer
+
 OP_T;                   // tipul operator
 }
 
@@ -39,7 +42,7 @@ class_stat
 feature	
 	:	
 	ID '(' (formal (',' formal)*)? ')' ':' type=TYPE '{' expr '}'
-	 -> ^(METHOD_T ID ^(RETURN_TYPE_T $type) ^(TYPE_ID formal*) ^(EXPR_T expr))
+	 -> ^(METHOD_T ID TYPE ^(FORMALS_T formal*) ^(EXPR_T expr))
 	|
 	ID ':' TYPE ('<-' expr)?
 	 -> ^(ATTR_T ID TYPE ^(EXPR_T expr)?)
@@ -47,7 +50,7 @@ feature
 
 formal 	
 	:	
-	ID ':' TYPE -> ^(FORMAL_T ID TYPE)
+	ID ':' TYPE -> ^(TYPE_ID ID TYPE)
 	;
 
 expr	
@@ -266,6 +269,11 @@ TYPE
 	|
 	'SELF_TYPE'
 	;
+
+INTEGER
+  : 
+  ('0'..'9')+
+  ;
 	
 ID	
 	:
@@ -290,11 +298,6 @@ fragment
 ESC_SEQ
     :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
     ;
-
-INTEGER
-	:	
-	'0'..'9'+
-	;
   
 WS  
   :   
