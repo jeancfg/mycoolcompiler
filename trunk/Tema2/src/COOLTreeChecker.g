@@ -5,6 +5,10 @@ options {
   ASTLabelType = CommonTree;
 }
 
+@header {
+  import java.util.LinkedList;
+}
+
 @members {
 	private String fileName = "Unnamed"; // The file name is needed by the tree API.
 	
@@ -35,12 +39,49 @@ options {
 	 return result;
 	}
 	
-	private boolean isESQ(char c) {
-	   return c == 'b' || c == 't' ||
-	     c == 'n' || c == 'f' ||
-	     c == 'r' || c == '\"' ||
-	     c == '\'' || c == '\\';
-	}
+
+  private static boolean isESQ(char c) {
+    return c == 'b' || c == '\b' || c == 't' || c == '\t' || c == 'n'
+        || c == '\n' || c == 'f' || c == '\f' || c == 'r' || c == '\r'
+        || c == '\"' || c == '\'' || c == '\\';
+  }
+
+  private static char normESQ(char c) {
+    if (c == 'b')
+      return '\b';
+    if (c == 't')
+      return '\t';
+    if (c == 'n')
+      return '\n';
+    if (c == 'f')
+      return '\f';
+    if (c == 'r')
+      return '\r';
+    return c;
+  }
+
+  public static String normalize(String str) {
+    int size = str.length();
+    StringBuilder s = new StringBuilder();
+    char aux;
+
+    for (int i = 1; i < size - 1;) {
+      if (str.charAt(i) == '\\') {
+        if (i < size - 1 && isESQ(str.charAt(i + 1))) {
+          s.append(normESQ(str.charAt(i + 1)));
+          i += 2;
+        } else {
+          s.append(str.charAt(++i));
+          i++;
+        }
+      } else {
+        s.append(str.charAt(i));
+        i++;
+      }
+    }
+
+    return s.toString();
+  }
 }
 
 program[Classes cl]
@@ -131,9 +172,9 @@ expr returns [Expression result, AbstractSymbol returnType]
   {
     // Elimin ghilimelele de la inceputul si sfarsitul string-ului
     //   "abc" => abc
-    String str = $s.text;
-    str = str.substring(1, str.length()-1);    
-    //str = normalize(str);
+    // si apoi normalizez string-ul in functia normalize()
+    String str = $s.text;    
+    str = normalize(str);
 
     $result = new string_const($s.line, new StringSymbol(str, str.length(), 0));
     $returnType = AbstractTable.idtable.addString("String");
@@ -299,9 +340,73 @@ call returns [dispatch result, AbstractSymbol returnType]
   ;
   
 let returns [let result, AbstractSymbol returnType]
-  :
-  ^(LET_ST name=ID type=TYPE ('<-' e=expr)? expr)
+@init {
+  int line = -1;
+  LinkedList queue = new LinkedList();
+  Expression lastExpr = null;
+  Expression firstExpr = null;
+  String firstId = null, firstType = null;
+  Expression my_expr = null, my_aux_expr = null;
+  String my_id = null, my_type = null;
+}
+@after {
+  System.out.println(queue);
+  
+  Object[] buffer = new Object[3];
+  Object it = null;
+  
+  if (queue.size() > 0)
   {
-    ;    
+	  queue.removeLast();
+	  
+	  while(queue.size() > 0)
+	  {
+	    int counter = 0;
+		  // Fac pop() la ultimul "let" din lista
+		  while(queue.size() > 0)
+		  {
+		    it = queue.removeLast();
+		    if (it == null)
+		     break;
+		    buffer[counter++] = it;
+		  }
+		  
+		  if (counter == 2)
+		  {
+		    my_type = (String) buffer[0];
+		    my_id = (String) buffer[1];
+	      my_aux_expr = new let(line, AbstractTable.idtable.addString(my_id),
+	        AbstractTable.idtable.addString(my_type), new no_expr(0), lastExpr);  
+		  }
+		  else if (counter == 3)
+		  {
+		    my_expr = (Expression) buffer[0];
+		    my_type = (String) buffer[1];
+		    my_id = (String) buffer[2];
+	      my_aux_expr = new let(line, AbstractTable.idtable.addString(my_id),
+	       AbstractTable.idtable.addString(my_type), my_expr, lastExpr);
+		  }
+		  lastExpr = my_aux_expr;
+	  }
+  }  
+  $result = new let(line, AbstractTable.idtable.addString(firstId),
+    AbstractTable.idtable.addString(firstType), firstExpr, lastExpr);  
+}
+  :
+  ^(LET_ST id=ID type=TYPE ('<-' e1=expr)? (',' id_=ID type_=TYPE ('<-' expr_=expr)?
+    {
+      queue.add($id_.text);
+      queue.add($type_.text);
+      if (expr_ != null)
+        queue.add($expr_.result);
+      queue.add(null);
+    }
+  )* e2=expr)
+  {
+    line = $LET_ST.line;
+    lastExpr = $e2.result;
+    firstId = $id.text;
+    firstType = $type.text;
+    firstExpr = $e1.result;
   }
   ;
