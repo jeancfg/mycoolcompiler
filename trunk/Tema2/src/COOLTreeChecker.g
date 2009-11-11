@@ -76,16 +76,16 @@ feature returns [Feature result]
   :
   ^(METHOD_T name=ID type=TYPE formals expr)
   {
-    AbstractSymbol returnType = new IdSymbol($type.text, $type.text.length(), 0);
+    AbstractSymbol returnType = AbstractTable.idtable.addString($type.text);
     $expr.result.set_type(returnType);
-    $result = new method($METHOD_T.line, new IdSymbol($name.text, $name.text.length(), 0),
+    $result = new method($METHOD_T.line, AbstractTable.idtable.addString($name.text),
         $formals.result, returnType, $expr.result);
   }
   |
   ^(ATTR_T name=ID type=TYPE)
   {
-    $result = new attr($ATTR_T.line, new IdSymbol($name.text, $name.text.length(), 0),
-      new IdSymbol($type.text, $type.text.length(), 0), new no_expr(0));
+    $result = new attr($ATTR_T.line, AbstractTable.idtable.addString($name.text),
+      AbstractTable.idtable.addString($type.text), new no_expr(0));
   }
   |
   ^(ATTR_T name=ID type=TYPE e=expr)
@@ -93,8 +93,8 @@ feature returns [Feature result]
     Expression __expr = $expr.result;
     __expr.set_type($expr.returnType);
     
-    $result = new attr($ATTR_T.line, new IdSymbol($name.text, $name.text.length(), 0),
-      new IdSymbol($type.text, $type.text.length(), 0), __expr);    
+    $result = new attr($ATTR_T.line, AbstractTable.idtable.addString($name.text),
+      AbstractTable.idtable.addString($type.text), null);//__expr);    
   }
   ;
 
@@ -102,7 +102,7 @@ expr returns [Expression result, AbstractSymbol returnType]
   :
   ^(EXPR_T INTEGER)
   {
-    $result = new int_const($EXPR_T.line, new IntSymbol($INTEGER.text, $INTEGER.text.length(), 0));
+    $result = new int_const($EXPR_T.line, AbstractTable.inttable.addInt(Integer.parseInt($INTEGER.text)));
     $returnType = new IntSymbol("Int", 3, 0); 
   }
   |
@@ -120,16 +120,19 @@ expr returns [Expression result, AbstractSymbol returnType]
   ^(EXPR_T op)
   {
     $result = $op.result;
+    $returnType = $op.returnType;
   }
   |
   op
   {
     $result = $op.result;
+    $returnType = $op.returnType;
   }
   |
   ID
   {
     $result = new object($ID.line, new IdSymbol($ID.text, $ID.text.length(), 0));
+    $returnType = 
   }
   ;
 
@@ -160,7 +163,7 @@ adapt_id_integer returns [String result, String type]
   ID      { $result = $ID.text; $type = "Id"; }
   ;
 
-op returns [Expression result]
+op returns [Expression result, AbstractSymbol returnType]
   :
   (^(op_bin expr expr)) => ^(o = op_bin e1 = expr e2 = expr)
   {
