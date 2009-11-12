@@ -11,9 +11,12 @@ options {
 
 @members {
   // Do not touch; variabile folosite pentru '@'
-  int static_dispatchLine;
-  Expression static_dispatchExpr;
-  AbstractSymbol static_dispatchObj;
+  int static_dispatchLine = -1;
+  Expression static_dispatchExpr = null;
+  AbstractSymbol static_dispatchObj = null;
+  int level = 0;
+  int static_dispatchLevel = 0;
+  // End
   
 	private String fileName = "Unnamed"; // The file name is needed by the tree API.
 	
@@ -155,6 +158,13 @@ feature returns [Feature result]
 
 expr returns [Expression result, AbstractSymbol returnType]
   :
+  (^(EXPR_T l=let) | l=let)
+  {
+    $result = $l.result;
+    $returnType = $l.returnType;
+    $result.set_type($returnType);
+  }
+  |
   (^(EXPR_T bl=block) | bl=block)
   {
     $result = $bl.result;
@@ -207,13 +217,6 @@ expr returns [Expression result, AbstractSymbol returnType]
   {
     $result = new bool_const($b.line, false);
     $returnType = AbstractTable.idtable.addString("Bool");
-    $result.set_type($returnType);
-  }
-  |
-  (^(EXPR_T l=let) | l=let)
-  {
-    $result = $l.result;
-    $returnType = $l.returnType;
     $result.set_type($returnType);
   }
   |
@@ -350,9 +353,10 @@ block returns [block result, AbstractSymbol returnType]
 call returns [Expression result, AbstractSymbol returnType]
 @init {
   Expressions exprs = null;
-  static_dispatchLine = -1;
-  static_dispatchExpr = null;
-  static_dispatchObj = null;
+  level++;
+}
+@after {
+  level--;
 }
   :
   ^(CALL_T { exprs = new Expressions($CALL_T.line); } 
@@ -367,31 +371,33 @@ call returns [Expression result, AbstractSymbol returnType]
   ^(aux='.' { exprs = new Expressions($aux.line); }
     e1=expr ID
     {
-//        Expression self_type = new object($ID.line, AbstractTable.idtable.addString("self"));
-//        self_type.set_type(AbstractTable.idtable.addString("SELF_TYPE"));
-        if (static_dispatchLine == -1)
+        if (level != static_dispatchLevel - 1)
+        {
 	        $result = new dispatch($aux.line, $e1.result, AbstractTable.idtable.addString($ID.text),
 	          exprs);
+	      }
     }
     (e2=expr { exprs.appendElement($e2.result); })*
     )
     {
-        if (static_dispatchLine != -1)
+        // Atasez de parinte dispatch-ul static
+        if (level == static_dispatchLevel - 1)
         {
           $result = new static_dispatch(static_dispatchLine, static_dispatchExpr, static_dispatchObj,
             AbstractTable.idtable.addString($ID.text), exprs);
+          static_dispatchLevel = -1;
           static_dispatchLine = -1;
           static_dispatchExpr = null;
           static_dispatchObj = null;
         }
     }
-    
   |
   ^(aux='@' expr TYPE)
   {
     static_dispatchExpr = $expr.result;
     static_dispatchObj = AbstractTable.idtable.addString($TYPE.text);
     static_dispatchLine = $aux.line;
+    static_dispatchLevel = level;
   }
   ;
   
@@ -458,6 +464,7 @@ let returns [let result, AbstractSymbol returnType]
   :
   ^(LET_ST id=ID type=TYPE ('<-' e1=expr)? (',' id_=ID type_=TYPE ('<-' expr_=expr)?
     {
+      System.out.println("Adaug in let");
       queue.add($id_.text);
       queue.add($type_.text);
       if (expr_ != null)
