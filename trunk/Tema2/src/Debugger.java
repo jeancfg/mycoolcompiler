@@ -75,7 +75,7 @@ public class Debugger {
 		Program prg = new program(11, cl);
 
 		test(
-				"/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/advanced/let2.cl",
+				"/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/dispatch.cl",
 				cl);
 		// runBatteryOfTests(simpleTestsRoot);
 		// runBatteryOfTests(advancedTestsRoot);

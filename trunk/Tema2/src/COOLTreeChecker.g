@@ -10,6 +10,11 @@ options {
 }
 
 @members {
+  // Do not touch; variabile folosite pentru '@'
+  int static_dispatchLine;
+  Expression static_dispatchExpr;
+  AbstractSymbol static_dispatchObj;
+  
 	private String fileName = "Unnamed"; // The file name is needed by the tree API.
 	
 	public String getFileName() { return fileName; }
@@ -211,6 +216,34 @@ expr returns [Expression result, AbstractSymbol returnType]
     $returnType = $l.returnType;
     $result.set_type($returnType);
   }
+  |
+  (^(EXPR_T w=while_r) | w=while_r)
+  {
+    $result = $w.result;
+    $returnType = $w.returnType;
+    $result.set_type($returnType);
+  }
+  |
+  (^(EXPR_T if_r_=if_r) | if_r_=if_r)
+  {
+    $result = $if_r_.result;
+    $returnType = $if_r_.returnType;
+    $result.set_type($returnType);
+  }
+  |
+  (^(EXPR_T case_r_=case_r) | case_r_=case_r)
+  {
+    $result = $case_r_.result;
+    $returnType = $case_r_.returnType;
+    $result.set_type($returnType);
+  }
+  |
+  (^(EXPR_T new_r_=new_r) | new_r_=new_r)
+  {
+    $result = $new_r_.result;
+    $returnType = $new_r_.returnType;
+    $result.set_type($returnType);
+  }
   ;
 
 formals returns [Formals result]
@@ -314,9 +347,12 @@ block returns [block result, AbstractSymbol returnType]
   )
   ;
 
-call returns [dispatch result, AbstractSymbol returnType]
+call returns [Expression result, AbstractSymbol returnType]
 @init {
   Expressions exprs = null;
+  static_dispatchLine = -1;
+  static_dispatchExpr = null;
+  static_dispatchObj = null;
 }
   :
   ^(CALL_T { exprs = new Expressions($CALL_T.line); } 
@@ -333,10 +369,30 @@ call returns [dispatch result, AbstractSymbol returnType]
     {
 //        Expression self_type = new object($ID.line, AbstractTable.idtable.addString("self"));
 //        self_type.set_type(AbstractTable.idtable.addString("SELF_TYPE"));
-        $result = new dispatch($aux.line, $e1.result, AbstractTable.idtable.addString($ID.text),
-          exprs);
+        if (static_dispatchLine == -1)
+	        $result = new dispatch($aux.line, $e1.result, AbstractTable.idtable.addString($ID.text),
+	          exprs);
     }
-    (e2=expr { exprs.appendElement($e2.result); })*)
+    (e2=expr { exprs.appendElement($e2.result); })*
+    )
+    {
+        if (static_dispatchLine != -1)
+        {
+          $result = new static_dispatch(static_dispatchLine, static_dispatchExpr, static_dispatchObj,
+            AbstractTable.idtable.addString($ID.text), exprs);
+          static_dispatchLine = -1;
+          static_dispatchExpr = null;
+          static_dispatchObj = null;
+        }
+    }
+    
+  |
+  ^(aux='@' expr TYPE)
+  {
+    static_dispatchExpr = $expr.result;
+    static_dispatchObj = AbstractTable.idtable.addString($TYPE.text);
+    static_dispatchLine = $aux.line;
+  }
   ;
   
 let returns [let result, AbstractSymbol returnType]
@@ -388,9 +444,16 @@ let returns [let result, AbstractSymbol returnType]
 		  }
 		  lastExpr = my_aux_expr;
 	  }
-  }  
+  }
+
+  if (firstExpr == null)
+    firstExpr = new no_expr(0);
+    
+  if (lastExpr == null)
+    lastExpr = new no_expr(0);
+    
   $result = new let(line, AbstractTable.idtable.addString(firstId),
-    AbstractTable.idtable.addString(firstType), firstExpr, lastExpr);  
+	 AbstractTable.idtable.addString(firstType), firstExpr, lastExpr);
 }
   :
   ^(LET_ST id=ID type=TYPE ('<-' e1=expr)? (',' id_=ID type_=TYPE ('<-' expr_=expr)?
@@ -408,5 +471,53 @@ let returns [let result, AbstractSymbol returnType]
     firstId = $id.text;
     firstType = $type.text;
     firstExpr = $e1.result;
+  }
+  ;
+
+while_r returns [loop result, AbstractSymbol returnType]
+  :
+  ^(WHILE_ST e1=expr e2=expr)
+  {
+    $result = new loop($WHILE_ST.line, $e1.result, $e2.result);
+    $returnType = $e2.returnType;
+  }
+  ;
+
+if_r returns [cond result, AbstractSymbol returnType]
+  :
+  ^(IF_ST e1=expr e2=expr e3=expr)
+  {
+    $result = new cond($IF_ST.line, $e1.result, $e2.result, $e3.result);
+    $returnType = $e2.returnType;
+  }
+  ;
+
+case_r returns [typcase result, AbstractSymbol returnType]
+@init {
+  Cases cases = null;
+}
+  :
+  ^(CASE_ST e1=expr {
+    cases = new Cases($CASE_ST.line);
+    $result = new typcase($CASE_ST.line, $e1.result, cases);
+  }
+    (ID TYPE e2=expr
+      {
+        branch br = new branch($ID.line,
+          AbstractTable.idtable.addString($ID.text),
+          AbstractTable.idtable.addString($TYPE.text),
+          $e2.result);
+        cases.appendElement(br);
+      }
+    )+
+  )
+  ;
+
+new_r returns [new_ result, AbstractSymbol returnType]
+  :
+  ^(NEW_ST TYPE)
+  {
+    $returnType = AbstractTable.idtable.addString($TYPE.text);
+    $result = new new_($NEW_ST.line, AbstractTable.idtable.addString($TYPE.text));
   }
   ;
