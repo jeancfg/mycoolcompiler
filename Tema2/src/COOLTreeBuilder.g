@@ -143,9 +143,9 @@ atom
   |   ID '(' (expr (',' expr)*)? ')' -> ^(CALL_T ID expr*)
   |  '{' (expr ';')+ '}' -> ^(BLOCK_T expr+)
   |   NEW_ST^ TYPE
-  |   IF_ST^ expr THEN_ST expr ELSE_ST expr FI_ST 
+  |   IF_ST^ expr THEN_ST! expr ELSE_ST! expr FI_ST! 
   |   WHILE_ST^ expr LOOP_ST! expr POOL_ST! 
-  |   CASE_ST^ expr OF_ST! (ID ':' TYPE '=>' expr ';')+ ESAC_ST! 
+  |   CASE_ST^ expr OF_ST! (ID ':'! TYPE '=>'! expr ';'!)+ ESAC_ST! 
   |   LET_ST^ ID ':'! TYPE ('<-' expr)? (',' ID ':'! TYPE ('<-' expr)?)* IN_ST! expr 
   
   ;
