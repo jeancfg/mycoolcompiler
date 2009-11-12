@@ -120,10 +120,9 @@ tildaExpr
 
 dispatchExpr
   :
-  (
-    (atom '@'^ TYPE) => atom '@'^ TYPE
+   atom (
+    ('@') => '@'^ TYPE
     |
-    atom
   )
   (('.' dispatchExprAux) => '.'^ dispatchExprAux)*
   ;
