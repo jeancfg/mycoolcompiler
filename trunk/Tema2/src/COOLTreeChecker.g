@@ -412,8 +412,6 @@ let returns [let result, AbstractSymbol returnType]
   String my_id = null, my_type = null;
 }
 @after {
-  System.out.println(queue);
-  
   Object[] buffer = new Object[3];
   Object it = null;
   
@@ -464,7 +462,6 @@ let returns [let result, AbstractSymbol returnType]
   :
   ^(LET_ST id=ID type=TYPE ('<-' e1=expr)? (',' id_=ID type_=TYPE ('<-' expr_=expr)?
     {
-      System.out.println("Adaug in let");
       queue.add($id_.text);
       queue.add($type_.text);
       if (expr_ != null)
