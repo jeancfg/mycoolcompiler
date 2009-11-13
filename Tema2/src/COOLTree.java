@@ -266,6 +266,7 @@ class program extends Program {
 	/* ClassTable constructor may do some semantic analysis */
 	ClassTable classTable = new ClassTable(classes);
 	
+	//FIXME: semantic analysis
 	/* some semantic analysis code may go here */
 
 	if (classTable.errors()) {
