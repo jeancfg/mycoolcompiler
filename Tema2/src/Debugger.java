@@ -133,29 +133,20 @@ public class Debugger {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// test(
-		// "/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/attributes.cl");
-		// test(
-		// "/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/case-insensitive.cl");
+		test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/advanced/self-type.cl");
+		//test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/advanced/void-2.cl");
 
-		// test greu - tre sa ma uit la definitia altor clase
-		// test(
-		// "/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/dispatch.cl");
+		//test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/graph.cl");
+		 //test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/hairyscary.cl");
+		//test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/lam.cl");
+		// test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/life.cl");
+		// test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/multifile-1.cl");
+		// test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/multifile-2.cl");
 
-		// test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/empty.cl");
-
-		test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/expressions.cl");
 		// runBatteryOfTests(simpleTestsRoot, false);
 		// runBatteryOfTests(advancedTestsRoot, false);
 		// runBatteryOfTests(complexTestsRoot, false);
 
 		// multiTest();
-
-		// runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/advanced/random_expressions.cl");
-		// runTest("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/simple/inheritance.cl");
-		// runTest(advancedTestsRoot + "ml-comments.cl");
-		// runTest(simpleTestsRoot + "my-ml-comments.cl");
-		// runTest(simpleTestsRoot + "attributes.cl");
 	}
-
 }
