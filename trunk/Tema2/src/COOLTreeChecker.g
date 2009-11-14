@@ -63,8 +63,6 @@ options {
       return '\n';
     if (c == 'f')
       return '\f';
-    if (c == 'r')
-      return '\r';
     return c;
   }
 
