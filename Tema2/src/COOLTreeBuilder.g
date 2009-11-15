@@ -140,7 +140,7 @@ atom
   |   FALSE_ST
   |   STRING
   |   ID '(' (expr (',' expr)*)? ')' -> ^(CALL_T ID expr*)
-  |  '{' (expr ';')+ '}' -> ^(BLOCK_T expr+)
+  |  '{'^ (expr ';'!)+ '}'!
   |   NEW_ST^ TYPE
   |   IF_ST^ expr THEN_ST! expr ELSE_ST! expr FI_ST! 
   |   WHILE_ST^ expr LOOP_ST! expr POOL_ST! 
