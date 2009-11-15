@@ -132,8 +132,7 @@ feature returns [Feature result]
   :
   ^(METHOD_T name=ID type=TYPE formals expr)
   {
-    AbstractSymbol returnType = AbstractTable.idtable.addString($type.text);
-    $expr.result.set_type(returnType);
+    AbstractSymbol returnType = AbstractTable.idtable.addString($type.text);    
     $result = new method($METHOD_T.line, AbstractTable.idtable.addString($name.text),
         $formals.result, returnType, $expr.result);
   }
@@ -150,7 +149,7 @@ feature returns [Feature result]
     __expr.set_type($expr.returnType);
     
     $result = new attr($ATTR_T.line, AbstractTable.idtable.addString($name.text),
-      AbstractTable.idtable.addString($type.text), __expr);    
+      AbstractTable.idtable.addString($type.text), __expr);
   }
   ;
 
@@ -186,10 +185,16 @@ expr returns [Expression result, AbstractSymbol returnType]
     // Elimin ghilimelele de la inceputul si sfarsitul string-ului
     //   "abc" => abc
     // si apoi normalizez string-ul in functia normalize()
-    String str = $s.text;    
+    String str = $s.text;
+    int newLines = 0;
+    
+    for (int __my_private_i = 0 ; __my_private_i < str.length() ; __my_private_i++)
+      if (str.charAt(__my_private_i) == '\n')
+        newLines++;
+        
     str = normalize(str);
 
-    $result = new string_const($s.line, new StringSymbol(str, str.length(), 0));
+    $result = new string_const($s.line + newLines, new StringSymbol(str, str.length(), 0));
     $returnType = AbstractTable.idtable.addString("String");
   }
   |
@@ -343,7 +348,7 @@ block returns [block result, AbstractSymbol returnType]
   Expressions exprs = null;
 }
   :
-  ^(BLOCK_T { exprs = new Expressions($BLOCK_T.line); $result = new block($BLOCK_T.line, exprs); } 
+  ^(p='{' { exprs = new Expressions($p.line); $result = null; $result = new block($p.line, exprs); } 
     (expr { exprs.appendElement($expr.result); $returnType = $expr.returnType; } )*
   )
   ;
