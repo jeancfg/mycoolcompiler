@@ -1,0 +1,61 @@
+Tema 2 CPL
+
+Autori: 
+	Laurentiu DASCALU, 342C3
+	Catalin RADU, 342C3
+
+1. Detalii asupra implementarii temei
+
+a. constructia AST
+- in sursa 'COOLTreeBuilder.java' este parsata sursa si construit 
+un AST in faza preliminara
+- pentru tratarea precedentei operatorilor am folosit reguli separate
+pentru fiecare operatie
+- pentru tratarea tokenilor case-insensitive am construit pentru fiecare
+keyword cate o regula in lexer care va matchui acel keyword indiferent
+de case-ul fiecarei litere
+- am folosit tokeni virtuali pentru nodurile care contin informatiile pentru
+metode, clase, atribute si parametrii metodelor, pentru operatorii binari /
+unari am pus ca radacina operatorul
+- erorile sintactice si lexicale intalnite la acest pas sunt afisate si
+programul isi incheie executia la intalnirea unei astfel de erori
+
+b. parcurgerea AST-ului generat
+
+- in sursa 'COOLTreeChecker.java' este parcurs arborele generat anterior
+- in cazul instructiunii 'let' se pun toate informatiile din aceasta
+instructiune intr-o lista inlantuita (separate printr-un obiect NULL),
+apoi aceasta lista este parcursa si construit cate un 'let' pentru
+fiecare variabila care apare in declaratia 'let'-ului initial
+- la 'dispatch', in cazul unui '@' lucrurile sunt putin mai subtile:
+ - salvez informatia despre static dispatch si pe revenire, daca
+ adancime(dispatch) este adancime(static_dispatch - 1) atunci leg aceste
+ informatii
+- eliminarea escaparii caracterelor diferite de \n, \t, \b si \f este facuta
+tot in aceasta etapa, cu ajutorul functiei 'normalize' care este definita
+in sectiunea members
+
+c. analiza semantica
+
+- este implementata in sursa 'ClassTable.java'
+- este parcursa lista de clase, metode din fiecare clasa s.a.m.d. si in functie
+de tipul fiecarui nod acesta va fi adnotat cu informatiile de tip conform cu
+specificatia COOL 
+- in cazul intalnirii unei erori in aceasta etapa se va iesi din program
+- pentru testul de ciclu de mostenire am parcurs lista de parinti si ne-am
+oprit cand adancimea e mai mare decat numarul de clase 
+
+
+2. Probleme intalnite si modul in care munca a fost divizata intre
+membrii echipei
+
+- ambii coechipieri s-au implicat in toate etapele presupuse de tema
+(analiza lexicala, semantica, sintactica)
+
+- metoda de dezvoltare a fost, la o scara destul de mica, Xtreme programming
+cu accent pe pair programming
+
+- probleme au aparut la regulile de dispatch si let, iar solutionarea lor a fost
+descrisa anterior
+
+- pentru depanare am construit o clasa Debugger cu care ne-am jucat pe teste

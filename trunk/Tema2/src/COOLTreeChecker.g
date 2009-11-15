@@ -70,6 +70,15 @@ options {
     int size = str.length();
     StringBuilder s = new StringBuilder();
     char aux;
+    
+    for (int  i = 1 ; i < size - 1 ; i++)
+    {
+      if (str.charAt(i) == '\n')
+        if (i > 0 && str.charAt(i - 1) != '\\')
+          return null;
+        else if (i > 1 && str.charAt(i - 1) == '\\' && str.charAt(i - 2) == '\\')
+          return null;
+    }
 
     for (int i = 1; i < size - 1;) {
       if (str.charAt(i) == '\\') {
@@ -193,6 +202,12 @@ expr returns [Expression result, AbstractSymbol returnType]
         newLines++;
         
     str = normalize(str);
+    
+    if (str == null)
+    {
+      System.err.println("[" + ClassTable.getCurrentFilename() + ":" + $s.line + "] Invalid formatted string " + $s.text + ".");
+      System.exit(1);
+    }
 
     $result = new string_const($s.line + newLines, new StringSymbol(str, str.length(), 0));
     $returnType = AbstractTable.idtable.addString("String");

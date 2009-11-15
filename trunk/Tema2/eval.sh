@@ -93,7 +93,6 @@ echo
 
 for CL_SRC in $TESTS_DIR/simple/*.cl; do
 	test_correct $CL_SRC ${CL_SRC/%cl/ast}
-	exit
 done
 
 echo

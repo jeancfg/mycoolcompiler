@@ -1,0 +1,60 @@
+
+returnType returns [AbstractSymbol result, String returnStr]
+  :
+  ^(RETURN_TYPE_T type=TYPE)
+  {
+    $result = new IdSymbol($type.text, $type.text.length(), 0);
+    $returnStr = $type.text;
+  }
+  ;
+
+//$result = new Formals($formal.line);
+formals returns [Formals result]
+@init
+{
+  $result = new Formals(0);
+}
+  :
+  ^(TYPE_ID (formal {
+    $result.addElement($formal.result); } )*)
+  ;
+  
+formal returns [Formal result]
+  :
+  ^(FORMAL_T ID type=TYPE)
+  {
+    $result = new formal($ID.line,
+        new IdSymbol($ID.text, $ID.text.length(), 0),
+        new StringSymbol($type.text, $type.text.length(), 0));
+  }
+  ;
+  
+exprs returns [Expressions result]
+  :
+  ;
+  
+expr returns [Expression result]
+  :
+  ^(EXPR_T INTEGER)
+  {
+    $result = new int_const($EXPR_T.line, new IntSymbol($INTEGER.text, $INTEGER.text.length(), 0));
+  }
+  |
+  ^(EXPR_T op)
+  ;
+
+op returns [Expression result]
+  :
+  ^(OP_T '+' e1=id e2=id)
+  {
+    //$result = ;
+  }
+  ;
+
+id returns [AbstractSymbol result]
+  :
+  ^(ID_T ID)
+  {
+    $result = new IdSymbol($ID.text, $ID.text.length(), 0);
+  }
+  ;
