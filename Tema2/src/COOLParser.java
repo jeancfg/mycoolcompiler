@@ -49,13 +49,14 @@ public class COOLParser {
 		 * the classes from all the source files that mycoolc takes at the
 		 * command line.
 		 */
-		Classes cl = new Classes(1);
-		Program prg = new program(1, cl);
+		boolean initDone = false;
+		Classes cl = null;
+		Program prg = null;
 
 		// Command line processing (you may modify it at will)
 		args = Flags.handleFlags(args);
 
-		/* 
+		/*
 		 * The current strategy creates an ANTLR AST for each compilation file,
 		 * and during tree parsing, each detected class is added to the global
 		 * class list. Note that this strategy needs additional semantic
@@ -63,6 +64,9 @@ public class COOLParser {
 		 */
 
 		try {
+//		_tests/advanced/expressions.cl
+//			_tests/complex/graph.cl
+//			_tests/complex/lam.cl
 
 			for (String fname : args) { // Iterate through the input file names
 				CommonTree rootNode = null;
@@ -70,17 +74,25 @@ public class COOLParser {
 
 				rootNode = buildCOOLTree(fis); // Build the ANTLR AST
 
+				if (!initDone) {
+					initDone = true;
+					cl = new Classes(rootNode.getLine());
+					prg = new program(rootNode.getLine(), cl);
+				}
+
 				// Parse the AST and add the partial results to the class list
+				ClassTable.setCurrentFilename(fname);
 				generateOutputData(cl, rootNode, fname);
 
 				fis.close();
 			}
 
-			// prg.semant()
+			if (prg != null) {
+				prg.semant();
 
-			// Important: Do not remove this line!
-			prg.dump_with_types(System.out, 0);
-
+				// Important: Do not remove this line!
+				prg.dump_with_types(System.out, 0);
+			}
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		} catch (RecognitionException ex) {

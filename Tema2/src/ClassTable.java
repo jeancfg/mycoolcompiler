@@ -45,6 +45,10 @@ class ClassTable {
 		currentFilename = filename;
 	}
 
+	public static String getCurrentFilename() {
+		return currentFilename;
+	}
+
 	private static void reportError(Object obj, String msg) {
 		if (DEBUG) {
 			System.out.println();
@@ -59,6 +63,7 @@ class ClassTable {
 	private void reportSemantError(int line, String msg) {
 		semantError().append(
 				"[" + currentFilename + ":" + line + "] " + msg + ".\n");
+		System.exit(0);
 	}
 
 	/**
@@ -221,6 +226,9 @@ class ClassTable {
 	}
 
 	private void checkAttribute(attr attr_v) {
+		if (attr_v.name.equals(SELF))
+			reportSemantError(attr_v.lineNumber,
+					"Cannot define attribute named self");
 		if (symbolTable.probe(attr_v.name) != null)
 			reportSemantError(attr_v.lineNumber, "Attribute " + attr_v.name.str
 					+ " already defined");
@@ -237,6 +245,9 @@ class ClassTable {
 			aux = enumeration.nextElement();
 			if (aux instanceof formal) {
 				formal = (formal) aux;
+				if (formal.name.equals(SELF))
+					reportSemantError(formal.lineNumber,
+							"Cannot define formal named self");
 				symbolTable.addId(formal.name, formal.type_decl);
 			} else
 				reportError(aux, "[ERROR] Expected formal instance");
@@ -311,7 +322,11 @@ class ClassTable {
 		checkFormals(formals);
 
 		Expression expr = method_v.expr;
-		checkExpression(expr);
+		String result = checkExpression(expr);
+
+		if (!canCast(result, method_v.return_type.str))
+			reportSemantError(((Expression) expr).lineNumber, "Cannot cast "
+					+ result + " to " + method_v.return_type.str);
 
 		symbolTable.exitScope();
 	}
@@ -684,6 +699,9 @@ class ClassTable {
 			reportSemantError(let.lineNumber,
 					"Declaring self as variable in let construction is illegal");
 
+		if (let.identifier.str.equals(SELF))
+			reportSemantError(let.lineNumber,
+					"Cannot define let variable named self");
 		symbolTable.addId(let.identifier, let.type_decl);
 
 		String initType = checkExpression(let.init);
@@ -800,22 +818,29 @@ class ClassTable {
 	private String m_block(block block) {
 		Enumeration exprs = block.body.getElements();
 		Object expr = null;
+		String result = null;
 
 		while (exprs.hasMoreElements()) {
 			expr = exprs.nextElement();
 			if (expr instanceof Expression) {
-				if (checkExpression((Expression) expr) == null)
+				result = checkExpression((Expression) expr);
+				if (result == null)
 					return null;
 			} else
 				reportError(expr,
 						"[ERROR] Expected expression in block instance");
 		}
 
-		if (expr != null) {
-			block.set_type(((Expression) expr).get_type());
-			System.out.println("Tipul este " + block.get_type().str);
-			return block.get_type().str;
+		// if (expr != null) {
+		// block.set_type(((Expression) expr).get_type());
+		// return block.get_type().str;
+		// }
+
+		if (result != null) {
+			block.set_type(AbstractTable.idtable.addString(result));
+			return result;
 		}
+
 		return null;
 	}
 
@@ -943,7 +968,7 @@ class ClassTable {
 		}
 
 		static_dispatch.set_type(method.return_type);
-		return static_dispatch.type_name.str;
+		return method.return_type.str;
 	}
 
 	private String m_new(new_ new_) {
@@ -1054,12 +1079,42 @@ class ClassTable {
 			Iterator<String> it = inheritedMethods.keySet().iterator();
 			while (it.hasNext()) {
 				String key = it.next();
-				// FIXME:
-				currentClassMethods.put(key, inheritedMethods.get(key));
+				method m1 = currentClassMethods.get(key);
+				method m2 = inheritedMethods.get(key);
+
+				if (m1 == null)
+					currentClassMethods.put(key, inheritedMethods.get(key));
+				else {
+					Enumeration f1 = m1.formals.getElements();
+					Enumeration f2 = m2.formals.getElements();
+					while (f1.hasMoreElements() && f2.hasMoreElements()) {
+						Object o1 = f1.nextElement();
+						String t1 = null;
+
+						Object o2 = f2.nextElement();
+						String t2 = null;
+
+						if (o1 instanceof formal)
+							t1 = ((formal) o1).type_decl.str;
+
+						if (o2 instanceof formal)
+							t2 = ((formal) o2).type_decl.str;
+
+						if (t1 != null && t2 != null && t1.equals(t2))
+							;
+						else
+							reportSemantError(m1.lineNumber,
+									" Trying to override a method with not the same signature");
+					}
+
+					if (f1.hasMoreElements() || f2.hasMoreElements())
+						reportSemantError(m1.lineNumber,
+								" Trying to override a method with not the same signature");
+				}
 			}
 		}
 
-		if (currentClass.name.str.equals(MAIN_CLASS)) {
+		if (cl.name.str.equals(MAIN_CLASS)) {
 			mainClassDefined = true;
 			if (currentClassMethods.containsKey(MAIN_METHOD))
 				mainMethodDefined = true;
@@ -1085,5 +1140,30 @@ class ClassTable {
 	private void checkInheritFrom(String cl, int line) {
 		if (cl.equals(INT) || cl.equals(BOOL) || cl.equals(STRING))
 			reportSemantError(line, "Class " + cl + " is not inheritable");
+	}
+
+	private boolean canCast(String from, String to) {
+		class_ from_c;
+		String aux;
+
+		// Pot casta la OBJECT orice tip
+		if (from.equals(to) || to.equals(OBJECT))
+			return true;
+
+		if (from.equals(SELF_TYPE))
+			from_c = currentClass;
+		else
+			from_c = loadedClasses.get(from);
+
+		if (from_c.name.str.equals(to))
+			return true;
+
+		while (from_c.parent != null && !from_c.parent.str.equals(OBJECT)) {
+			aux = from_c.parent.str;
+			if (aux.equals(to))
+				return true;
+			from_c = loadedClasses.get(aux);
+		}
+		return false;
 	}
 }

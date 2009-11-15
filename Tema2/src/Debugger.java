@@ -150,16 +150,13 @@ public class Debugger {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		multiTest();
+		//multiTest();
 		// runBatteryOfTests(simpleTestsRoot, false);
 		// runBatteryOfTests(advancedTestsRoot, false);
 		// runBatteryOfTests(complexTestsRoot, false);
 
 		// FIXME: Nu merg urmatoarele teste AMR 11
-		// test("teste/_tests/errors/block.cl");
-
-		// test("teste/_tests/errors/string-error-1.cl");
-		// test("teste/_tests/errors/string-error-2.cl");
+		test("_tests/simple/dispatch.cl");
 	}
 
 	public static void iterateOverAttrHashMap(
@@ -204,9 +201,4 @@ public class Debugger {
 			}
 		}
 	}
-
-	// FIXME: se poate
-	// - suprascrierea metodelor prin mostenire doar daca
-	// au aceeasi signatura
-	// - bind to self in let/case/formal parameter
 }
