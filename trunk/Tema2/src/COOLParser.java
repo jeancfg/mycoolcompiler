@@ -9,13 +9,6 @@ import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.CommonTreeNodeStream;
 
 public class COOLParser {
-
-	/**
-	 * TODO: Feel free to change or rewrite the entire structure below,
-	 * according to your needs. It is just a sample starting point, that
-	 * successfully uses the available API.
-	 */
-
 	public static CommonTokenStream prepareParsing(InputStream is)
 			throws IOException {
 		ANTLRInputStream input = new ANTLRInputStream(is);
@@ -62,11 +55,7 @@ public class COOLParser {
 		// Command line processing (you may modify it at will)
 		args = Flags.handleFlags(args);
 
-		/*
-		 * TODO: You can change the code below and implement a different
-		 * strategy, such as concatenating input source files and then analyzing
-		 * them as a whole using ANTLR.
-		 * 
+		/* 
 		 * The current strategy creates an ANTLR AST for each compilation file,
 		 * and during tree parsing, each detected class is added to the global
 		 * class list. Note that this strategy needs additional semantic
@@ -87,27 +76,15 @@ public class COOLParser {
 				fis.close();
 			}
 
-			/*
-			 * TODO: You MAY need to perform additional semantic checking here,
-			 * if you have multiple files. For this to happen, implement
-			 * 
-			 * prg.semant()
-			 * 
-			 * and additional semant() methods in each of the classes in
-			 * cool-tree.java.
-			 */
-
 			// prg.semant()
 
 			// Important: Do not remove this line!
 			prg.dump_with_types(System.out, 0);
 
 		} catch (IOException ex) {
-			// TODO: Implement your own exception handling here
 			ex.printStackTrace();
 		} catch (RecognitionException ex) {
 			ex.printStackTrace();
 		}
-
 	}
 }

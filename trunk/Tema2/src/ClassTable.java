@@ -10,6 +10,8 @@ import java.util.Iterator;
  */
 @SuppressWarnings("unchecked")
 class ClassTable {
+	private static boolean DEBUG = false;
+
 	private int semantErrors;
 	private PrintStream errorStream;
 	private final static String INT = "Int";
@@ -19,6 +21,8 @@ class ClassTable {
 	private final static String SELF_TYPE = "SELF_TYPE";
 	private final static String SELF = "self";
 	private final static String NO_EXPR = "no_expr";
+	private final static String MAIN_METHOD = "main";
+	private final static String MAIN_CLASS = "Main";
 
 	private HashMap<String, HashMap<String, method>> methodsDefinedByClass;
 	private HashMap<String, HashMap<String, attr>> attributesDefinedByClass;
@@ -32,13 +36,29 @@ class ClassTable {
 
 	private SymbolTable symbolTable;
 
+	private static String currentFilename;
+
+	private boolean mainClassDefined = false;
+	private boolean mainMethodDefined = false;
+
+	public static void setCurrentFilename(String filename) {
+		currentFilename = filename;
+	}
+
 	private static void reportError(Object obj, String msg) {
-		System.out.println();
-		System.out.println("INTERNAL ERROR");
-		if (obj != null)
-			System.out.println(obj.getClass());
-		System.out.println(msg);
+		if (DEBUG) {
+			System.out.println();
+			System.out.println("INTERNAL ERROR");
+			if (obj != null)
+				System.out.println(obj.getClass());
+			System.out.println(msg);
+		}
 		System.exit(1);
+	}
+
+	private void reportSemantError(int line, String msg) {
+		semantError().append(
+				"[" + currentFilename + ":" + line + "] " + msg + ".\n");
 	}
 
 	/**
@@ -201,6 +221,9 @@ class ClassTable {
 	}
 
 	private void checkAttribute(attr attr_v) {
+		if (symbolTable.probe(attr_v.name) != null)
+			reportSemantError(attr_v.lineNumber, "Attribute " + attr_v.name.str
+					+ " already defined");
 		symbolTable.addId(attr_v.name, attr_v.type_decl);
 		checkExpression(attr_v.init);
 	}
@@ -237,7 +260,6 @@ class ClassTable {
 	}
 
 	private String checkExpression(Expression expr) {
-		// EROARE pe 112, 123, 125, 127, 129, 132, 136, 142, 149, 150, 153
 		if (expr instanceof plus || expr instanceof sub || expr instanceof mul
 				|| expr instanceof divide || expr instanceof neg)
 			return m_arith(expr);
@@ -276,7 +298,6 @@ class ClassTable {
 			return m_staticDispatch((static_dispatch) expr);
 		else if (expr instanceof new_)
 			return m_new((new_) expr);
-		// FIXME:
 		reportError(expr, "[ERROR] Expected expression instance");
 		return null;
 	}
@@ -356,12 +377,19 @@ class ClassTable {
 		Iterator<String> it = loadedClasses.keySet().iterator();
 		while (it.hasNext()) {
 			aux = loadedClasses.get(it.next());
-			loadInheritData((class_) aux);
+			loadInheritData((class_) aux, 0);
 		}
 
 		// FIXME:
-		//Debugger.iterateOverAttrHashMap(attributesDefinedByClass);
-		//Debugger.iterateOverMethodHashMap(methodsDefinedByClass);
+		// Debugger.iterateOverAttrHashMap(attributesDefinedByClass);
+		// Debugger.iterateOverMethodHashMap(methodsDefinedByClass);
+
+		if (!mainClassDefined || !mainMethodDefined) {
+			if (!mainMethodDefined)
+				reportSemantError(0, "Class Main not found");
+			if (!mainClassDefined)
+				reportSemantError(0, "Method main() not found");
+		}
 
 		cls_e = cls.getElements();
 		while (cls_e.hasMoreElements()) {
@@ -433,8 +461,9 @@ class ClassTable {
 			return INT;
 		}
 
-		semantError().append(
-				"Invalid operands type at line " + plus.lineNumber + "\n");
+		reportSemantError(plus.lineNumber,
+				"Plus operation failed; expected INT object, received "
+						+ plus.e1.get_type().str + " type");
 		return null;
 	}
 
@@ -448,8 +477,10 @@ class ClassTable {
 			return INT;
 		}
 
-		semantError().append(
-				"Invalid operands type at line " + sub.lineNumber + "\n");
+		reportSemantError(sub.lineNumber,
+				"Sub operation failed; expected INT object, received "
+						+ sub.e1.get_type().str + " type");
+
 		return null;
 	}
 
@@ -463,8 +494,10 @@ class ClassTable {
 			return INT;
 		}
 
-		semantError().append(
-				"Invalid operands type at line " + mul.lineNumber + "\n");
+		reportSemantError(mul.lineNumber,
+				"Mul operation failed; expected INT object, received "
+						+ mul.e1.get_type().str + " type");
+
 		return null;
 	}
 
@@ -476,16 +509,16 @@ class ClassTable {
 				&& div.e2.get_type().str.equals(INT)) {
 			if (e2.equals("0")) {
 				// zero division
-				semantError().append(
-						"Division by zero encountered at line "
-								+ div.lineNumber + "\n");
+				reportSemantError(div.lineNumber, "Division by 0 !!!");
 				return null;
 			}
 			div.set_type(div.e1.get_type());
 			return INT;
 		}
-		semantError().append(
-				"Invalid operands type at line " + div.lineNumber + "\n");
+
+		reportSemantError(div.lineNumber,
+				"Div operation failed; expected INT object, received "
+						+ div.e1.get_type().str + " type");
 		return null;
 	}
 
@@ -496,8 +529,10 @@ class ClassTable {
 			neg.set_type(neg.e1.get_type());
 			return INT;
 		}
-		semantError().append(
-				"Invalid operand type at line " + neg.lineNumber + "\n");
+
+		reportSemantError(neg.lineNumber,
+				"Neg operation failed; expected INT object, received "
+						+ neg.e1.get_type().str + " type");
 		return null;
 	}
 
@@ -524,6 +559,9 @@ class ClassTable {
 			return BOOL;
 		}
 
+		reportSemantError(lt.lineNumber,
+				"Less then operation failed; expected INT objects, received "
+						+ e1 + " and " + e2);
 		return null;
 	}
 
@@ -536,6 +574,9 @@ class ClassTable {
 			return BOOL;
 		}
 
+		reportSemantError(leq.lineNumber,
+				"Less or equal operation failed; expected INT objects, received "
+						+ e1 + " and " + e2);
 		return null;
 	}
 
@@ -558,6 +599,9 @@ class ClassTable {
 			return BOOL;
 		}
 
+		reportSemantError(eq.lineNumber,
+				"Equal operation failed; undefined classes " + e1 + " and "
+						+ e2);
 		return null;
 	}
 
@@ -569,6 +613,9 @@ class ClassTable {
 			return BOOL;
 		}
 
+		reportSemantError(comp.lineNumber,
+				"Comp operation failed; expected (INT || BOOL) object, received "
+						+ e1);
 		return null;
 	}
 
@@ -580,6 +627,7 @@ class ClassTable {
 			return BOOL;
 		}
 
+		reportSemantError(isvoid.lineNumber, "IsVoid operation failed");
 		return null;
 	}
 
@@ -613,11 +661,11 @@ class ClassTable {
 				return (String) type;
 			} else if (type == null) {
 				attr attr = currentClassAttributes.get(object.name.str);
-				if (attr == null)
-					semantError().append(
-							"[Line " + object.lineNumber
-									+ "] Failed searching object "
-									+ object.name.str + ".\n");
+				if (attr == null) {
+					reportSemantError(object.lineNumber, "Variable "
+							+ object.name.str + " not defined");
+					return null;
+				}
 				object.set_type(attr.type_decl);
 				return attr.type_decl.str;
 			}
@@ -630,8 +678,11 @@ class ClassTable {
 	}
 
 	private String m_let(let let) {
-		// FIXME
 		symbolTable.enterScope();
+
+		if (let.identifier.str.equals(SELF))
+			reportSemantError(let.lineNumber,
+					"Declaring self as variable in let construction is illegal");
 
 		symbolTable.addId(let.identifier, let.type_decl);
 
@@ -648,10 +699,9 @@ class ClassTable {
 			checkExpression(let.body);
 		}
 
-		if (result == null) {
+		if (result == null)
 			reportError(null, "[ERROR] Inconsistent state in let expression");
-			System.exit(0);
-		}
+
 		let.set_type(let.body.get_type());
 
 		symbolTable.exitScope();
@@ -668,11 +718,11 @@ class ClassTable {
 
 		objType = checkExpression(dispatch.expr);
 
-		if (objType == null)
-			semantError().append(
-					"[line " + dispatch.lineNumber
-							+ "] Could not find type for object "
-							+ dispatch.name.str + ".\n");
+		if (objType == null) {
+			reportSemantError(dispatch.lineNumber, "Variable "
+					+ dispatch.name.str + " not defined");
+			return null;
+		}
 
 		// Caut definitia metodei
 		boolean search = false;
@@ -685,20 +735,15 @@ class ClassTable {
 		search = searchMethod(currentClass, dispatch.name.str);
 
 		if (!search) {
-			semantError().append(
-					"Method " + dispatch.name.str + " not defined.\n");
+			reportSemantError(dispatch.lineNumber, "Method "
+					+ dispatch.name.str + " not defined");
 			return null;
 		}
 
 		currentClassMethods = this.methodsDefinedByClass
 				.get(currentClass.name.str);
 
-		System.out.println("Clasa curenta " + currentClass.name.str);
-		System.out.println(this.methodsDefinedByClass);
-
 		method method = currentClassMethods.get(dispatch.name.str);
-		System.out.println(currentClassMethods);
-		System.out.println("Am cautat " + dispatch.name.str);
 
 		Enumeration method_params = method.formals.getElements();
 
@@ -706,9 +751,9 @@ class ClassTable {
 			call_p = params.nextElement();
 			def_p = method_params.nextElement();
 
-			if (call_p instanceof Expression) {
+			if (call_p instanceof Expression)
 				call_t = checkExpression((Expression) call_p);
-			} else
+			else
 				reportError(call_p, "[ERROR] Expected params instance");
 
 			if (def_p instanceof formal)
@@ -724,22 +769,21 @@ class ClassTable {
 						"SELF_TYPE painful error in formal parameters");
 
 			if (!getCommonClass(call_t, def_t).equals(
-					AbstractTable.idtable.addString(def_t))) {
-				semantError().append(
-						"[Line " + dispatch.lineNumber
-								+ "] Types do not match at calling method "
-								+ dispatch.name.str + ".\n");
-			}
+					AbstractTable.idtable.addString(def_t)))
+				reportSemantError(dispatch.lineNumber,
+						"Types do not match at calling method "
+								+ dispatch.name.str + "; expecting " + def_t
+								+ " , received " + call_t);
 		}
 
 		if (params.hasMoreElements())
-			semantError().append(
+			reportSemantError(dispatch.lineNumber,
 					"Too many parameters for calling method "
-							+ dispatch.name.str + ".\n");
+							+ dispatch.name.str);
 		else if (method_params.hasMoreElements())
-			semantError().append(
+			reportSemantError(dispatch.lineNumber,
 					"Too few parameters for calling method "
-							+ dispatch.name.str + ".\n");
+							+ dispatch.name.str);
 
 		if (method.return_type.str.equals(SELF_TYPE)
 				&& !currentClass.name.str.equals(this.currentClass.name.str)) {
@@ -769,6 +813,7 @@ class ClassTable {
 
 		if (expr != null) {
 			block.set_type(((Expression) expr).get_type());
+			System.out.println("Tipul este " + block.get_type().str);
 			return block.get_type().str;
 		}
 		return null;
@@ -881,15 +926,22 @@ class ClassTable {
 						"[ERROR] Expected expression in static dispatch");
 		}
 
+		if (methodsDefinedByClass.get(static_dispatch.type_name.str) == null) {
+			reportSemantError(static_dispatch.lineNumber, "Class "
+					+ static_dispatch.type_name.str
+					+ " not defined; static dispatch failed.\n");
+			return null;
+		}
 		method = methodsDefinedByClass.get(static_dispatch.type_name.str).get(
 				static_dispatch.name.str);
 
-		if (method == null)
-			semantError()
-					.append(
-							"Cannot find method " + static_dispatch.name.str
-									+ " in class"
-									+ static_dispatch.type_name.str + ".");
+		if (method == null) {
+			reportSemantError(static_dispatch.lineNumber, "Method "
+					+ static_dispatch.name.str + " not found in class "
+					+ static_dispatch.type_name.str);
+			return null;
+		}
+
 		static_dispatch.set_type(method.return_type);
 		return static_dispatch.type_name.str;
 	}
@@ -924,6 +976,10 @@ class ClassTable {
 	}
 
 	private void loadClassDefinition(class_ cl) {
+		if (loadedClasses.get(cl.name.str) != null && cl.lineNumber > 0)
+			reportSemantError(cl.lineNumber, "Class " + cl.name + " redefined");
+
+		checkInheritFrom(cl.parent.str, cl.lineNumber);
 		classesParent.put(cl, cl.parent.str);
 		loadedClasses.put(cl.name.str, cl);
 
@@ -949,17 +1005,28 @@ class ClassTable {
 
 			if (aux instanceof attr) {
 				attr_v = (attr) aux;
-				if (currentClass.name.str.equals("Int"))
-					System.out.println(attr_v);
+				if (currentClassAttributes.containsKey(attr_v.name.str))
+					reportSemantError(currentClassAttributes
+							.get(attr_v.name.str).lineNumber, "Attribute "
+							+ currentClassAttributes.get(attr_v.name.str).name
+							+ " redefined");
+				if (attr_v.name.str.equals(SELF))
+					reportSemantError(attr_v.lineNumber,
+							"Declaring self as attribute is illegal");
 				currentClassAttributes.put(attr_v.name.str, attr_v);
 			} else if (aux instanceof method) {
 				method_v = (method) aux;
+				if (currentClassMethods.containsKey(method_v.name.str))
+					reportSemantError(currentClassMethods
+							.get(method_v.name.str).lineNumber, "Method "
+							+ currentClassMethods.get(method_v.name.str).name
+							+ " redefined");
 				currentClassMethods.put(method_v.name.str, method_v);
 			}
 		}
 	}
 
-	private void loadInheritData(class_ cl) {
+	private void loadInheritData(class_ cl, int depth) {
 		// Copiez functiile din clasa parinte
 		// si le suprascriu in copil, daca e cazul
 		HashMap<String, method> inheritedMethods = null;
@@ -968,10 +1035,14 @@ class ClassTable {
 		if (cl == null)
 			return;
 
-		System.out.println("Mostenesc " + cl.name.str);
+		if (depth > loadedClasses.size()) {
+			reportSemantError(0, "Inheritance graph contains cycles");
+			System.exit(0);
+		}
+
 		// Incarc metodele parintelui si apoi le mostenesc
 		if (cl.parent != null)
-			loadInheritData(loadedClasses.get(cl.parent.str));
+			loadInheritData(loadedClasses.get(cl.parent.str), depth + 1);
 
 		// Copiez functiile din clasa parinte
 		// si le suprascriu in copil, daca e cazul
@@ -983,8 +1054,15 @@ class ClassTable {
 			Iterator<String> it = inheritedMethods.keySet().iterator();
 			while (it.hasNext()) {
 				String key = it.next();
+				// FIXME:
 				currentClassMethods.put(key, inheritedMethods.get(key));
 			}
+		}
+
+		if (currentClass.name.str.equals(MAIN_CLASS)) {
+			mainClassDefined = true;
+			if (currentClassMethods.containsKey(MAIN_METHOD))
+				mainMethodDefined = true;
 		}
 
 		currentClassAttributes = attributesDefinedByClass.get(cl.name.str);
@@ -992,8 +1070,20 @@ class ClassTable {
 			Iterator<String> it = inheritedAttributes.keySet().iterator();
 			while (it.hasNext()) {
 				String key = it.next();
+				if (currentClassAttributes.containsKey(key)
+						&& currentClassAttributes.get(key) != inheritedAttributes
+								.get(key))
+					reportSemantError(
+							currentClassAttributes.get(key).lineNumber,
+							"Attribute " + currentClassAttributes.get(key).name
+									+ " redefined");
 				currentClassAttributes.put(key, inheritedAttributes.get(key));
 			}
 		}
+	}
+
+	private void checkInheritFrom(String cl, int line) {
+		if (cl.equals(INT) || cl.equals(BOOL) || cl.equals(STRING))
+			reportSemantError(line, "Class " + cl + " is not inheritable");
 	}
 }
