@@ -101,7 +101,7 @@ classdef returns [class_ result]
   :
   ^(CLASS_T name=TYPE features)
   {
-		$result = new class_($CLASS_T.line,
+  	$result = new class_($CLASS_T.line,
 			AbstractTable.idtable.addString($name.text),
 			AbstractTable.idtable.addString("Object"),
 			$features.result,
@@ -413,9 +413,10 @@ let returns [let result, AbstractSymbol returnType]
   String firstId = null, firstType = null;
   Expression my_expr = null, my_aux_expr = null;
   String my_id = null, my_type = null;
+  Integer my_line = null;
 }
 @after {
-  Object[] buffer = new Object[3];
+  Object[] buffer = new Object[4];
   Object it = null;
   
   if (queue.size() > 0)
@@ -434,19 +435,23 @@ let returns [let result, AbstractSymbol returnType]
 		    buffer[counter++] = it;
 		  }
 		  
-		  if (counter == 2)
+		  if (counter == 3)
 		  {
 		    my_type = (String) buffer[0];
 		    my_id = (String) buffer[1];
-	      my_aux_expr = new let(line, AbstractTable.idtable.addString(my_id),
+		    my_line = (Integer) buffer[2];
+		    
+	      my_aux_expr = new let(my_line, AbstractTable.idtable.addString(my_id),
 	        AbstractTable.idtable.addString(my_type), new no_expr(0), lastExpr);  
 		  }
-		  else if (counter == 3)
+		  else if (counter == 4)
 		  {
 		    my_expr = (Expression) buffer[0];
 		    my_type = (String) buffer[1];
 		    my_id = (String) buffer[2];
-	      my_aux_expr = new let(line, AbstractTable.idtable.addString(my_id),
+		    my_line = (Integer) buffer[3];
+		    
+	      my_aux_expr = new let(my_line, AbstractTable.idtable.addString(my_id),
 	       AbstractTable.idtable.addString(my_type), my_expr, lastExpr);
 		  }
 		  lastExpr = my_aux_expr;
@@ -465,6 +470,13 @@ let returns [let result, AbstractSymbol returnType]
   :
   ^(LET_ST id=ID type=TYPE ('<-' e1=expr)? (',' id_=ID type_=TYPE ('<-' expr_=expr)?
     {
+      if ($id_.line == 277)
+      {
+        System.out.println("askjdal");
+        System.exit(0);
+      }
+       
+      queue.add(new Integer($id_.line));
       queue.add($id_.text);
       queue.add($type_.text);
       if (expr_ != null)
@@ -473,7 +485,7 @@ let returns [let result, AbstractSymbol returnType]
     }
   )* e2=expr)
   {
-    line = $LET_ST.line;
+    line = $id.line;
     lastExpr = $e2.result;
     firstId = $id.text;
     firstType = $type.text;
