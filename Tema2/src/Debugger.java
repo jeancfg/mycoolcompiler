@@ -19,8 +19,8 @@ public class Debugger {
 	public static final String simpleTestsRoot = "teste/_tests/simple/";
 	public static final String advancedTestsRoot = "teste/_tests/advanced/";
 	public static final String complexTestsRoot = "teste/_tests/complex/";
+	private static final String errorsTestsRoot = "teste/_tests/errors/";
 
-	// private static final String errorsTestsRoot = "teste/_tests/errors/";
 	// private static final String bonusTestsRoot = "teste/_tests/bonus/";
 
 	public static void runTest(String inputFileName) {
@@ -59,8 +59,6 @@ public class Debugger {
 	public static void test(String fname) {
 		try {
 			System.out.println("Rulez pentru fisierul " + fname);
-			Classes cl = new Classes(1);
-			Program prg = new program(11, cl);
 
 			if (fname.contains("multifile"))
 				return;
@@ -69,9 +67,13 @@ public class Debugger {
 			FileInputStream fis = new FileInputStream(fname);
 
 			rootNode = COOLParser.buildCOOLTree(fis); // Build the ANTLR AST
-			System.out.println(rootNode.toStringTree());
+			// System.out.println(rootNode.toStringTree());
+
+			Classes cl = new Classes(rootNode.getLine());
+			Program prg = new program(rootNode.getLine(), cl);
 
 			// Parse the AST and add the partial results to the class list
+			ClassTable.setCurrentFilename(fname);
 			COOLParser.generateOutputData(cl, rootNode, fname);
 
 			prg.semant();
@@ -96,8 +98,9 @@ public class Debugger {
 
 	public static void multiTest() {
 		try {
-			Classes cl = new Classes(1);
-			Program prg = new program(11, cl);
+			boolean initDone = false;
+			Classes cl = null;
+			Program prg = null;
 			String fname = "/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/multifile";
 
 			for (int i = 1; i < 3; i++) {
@@ -108,15 +111,22 @@ public class Debugger {
 						+ ".cl");
 
 				rootNode = COOLParser.buildCOOLTree(fis); // Build the ANTLR AST
-				System.out.println(rootNode.toStringTree());
+				// System.out.println(rootNode.toStringTree());
+
+				if (!initDone) {
+					initDone = true;
+					cl = new Classes(rootNode.getLine());
+					prg = new program(rootNode.getLine(), cl);
+				}
 
 				// Parse the AST and add the partial results to the class list
-				COOLParser.generateOutputData(cl, rootNode, fname);
-
-				prg.semant();
-
+				ClassTable.setCurrentFilename(fname + "-" + i + ".cl");
+				COOLParser.generateOutputData(cl, rootNode, fname + "-" + i
+						+ ".cl");
 				fis.close();
 			}
+			prg.semant();
+
 			String fout = fname + ".my.ast";
 
 			PrintStream output = new PrintStream(fout);
@@ -140,14 +150,16 @@ public class Debugger {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		//multiTest();
-		test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/lam.cl");
-		//test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/graph.cl");
-		
-		//test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/lam.cl");
-		//runBatteryOfTests(simpleTestsRoot, false);
-		//runBatteryOfTests(advancedTestsRoot, false);
-		//runBatteryOfTests(complexTestsRoot, false);
+		multiTest();
+		// runBatteryOfTests(simpleTestsRoot, false);
+		// runBatteryOfTests(advancedTestsRoot, false);
+		// runBatteryOfTests(complexTestsRoot, false);
+
+		// FIXME: Nu merg urmatoarele teste AMR 11
+		// test("teste/_tests/errors/block.cl");
+
+		// test("teste/_tests/errors/string-error-1.cl");
+		// test("teste/_tests/errors/string-error-2.cl");
 	}
 
 	public static void iterateOverAttrHashMap(
@@ -192,4 +204,9 @@ public class Debugger {
 			}
 		}
 	}
+
+	// FIXME: se poate
+	// - suprascrierea metodelor prin mostenire doar daca
+	// au aceeasi signatura
+	// - bind to self in let/case/formal parameter
 }

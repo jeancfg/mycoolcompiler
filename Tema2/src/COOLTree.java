@@ -18,7 +18,6 @@ abstract class Program extends TreeNode {
     }
     public abstract void dump_with_types(PrintStream out, int n);
     public abstract void semant();
-
 }
 
 
@@ -268,6 +267,7 @@ class program extends Program {
 	
 	//FIXME: semantic analysis
 	/* some semantic analysis code may go here */
+	// All code is implemented in ClassTable
 
 	if (classTable.errors()) {
 	    System.err.println("Compilation halted due to static semantic errors.");
