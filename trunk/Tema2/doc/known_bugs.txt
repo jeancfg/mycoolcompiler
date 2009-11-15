@@ -1,7 +1,0 @@
-1. Afiseaza tot timpu linia 1
- - tre sa facem astfel incat sa afiseze linia pe care este definita prima clasa
-2. Afiseaza \015 in loc de \r 
- 
- AbstractTable.inttable.addInt(un_int);
- AbstractTable.idtable.addString(un_string);
- 
