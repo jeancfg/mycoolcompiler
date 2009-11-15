@@ -185,27 +185,24 @@ class ClassTable {
 		loadedClasses = new HashMap<String, class_>();
 
 		loadedClasses.put(Object_class.name.str, Object_class);
-		iterateOverClass(Object_class);
+		loadClassDefinition(Object_class);
 
 		loadedClasses.put(IO_class.name.str, IO_class);
-		iterateOverClass(IO_class);
+		loadClassDefinition(IO_class);
 
 		loadedClasses.put(Int_class.name.str, Int_class);
-		iterateOverClass(Int_class);
+		loadClassDefinition(Int_class);
 
 		loadedClasses.put(Bool_class.name.str, Bool_class);
-		iterateOverClass(Bool_class);
+		loadClassDefinition(Bool_class);
 
 		loadedClasses.put(Str_class.name.str, Str_class);
-		iterateOverClass(Str_class);
+		loadClassDefinition(Str_class);
 	}
 
-	private void checkAttribute(attr attr_v, boolean evalExpr) {
-		if (!evalExpr) {
-			currentClassAttributes.put(attr_v.name.str, attr_v);
-			symbolTable.addId(attr_v.name, attr_v.type_decl);
-		} else
-			checkExpression(attr_v.init);
+	private void checkAttribute(attr attr_v) {
+		symbolTable.addId(attr_v.name, attr_v.type_decl);
+		checkExpression(attr_v.init);
 	}
 
 	private void checkFormals(Formals formals) {
@@ -240,7 +237,7 @@ class ClassTable {
 	}
 
 	private String checkExpression(Expression expr) {
-		System.out.println(expr.getClass());
+		// EROARE pe 112, 123, 125, 127, 129, 132, 136, 142, 149, 150, 153
 		if (expr instanceof plus || expr instanceof sub || expr instanceof mul
 				|| expr instanceof divide || expr instanceof neg)
 			return m_arith(expr);
@@ -288,6 +285,7 @@ class ClassTable {
 		symbolTable.enterScope();
 
 		currentClassMethods.put(method_v.name.str, method_v);
+
 		Formals formals = method_v.formals;
 		checkFormals(formals);
 
@@ -303,34 +301,13 @@ class ClassTable {
 		attr attr_v;
 		method method_v;
 
-		// Iterez de doua ori peste atribute
-		// - in prima etapa incarc definitia lor
-		// - in a doua evaluez expresia de initializare
-
 		while (elements.hasMoreElements()) {
 			aux = elements.nextElement();
 
 			if (aux instanceof attr) {
 				attr_v = (attr) aux;
-				checkAttribute(attr_v, false);
-			}
-		}
-
-		elements = features.getElements();
-		while (elements.hasMoreElements()) {
-			aux = elements.nextElement();
-
-			if (aux instanceof attr) {
-				attr_v = (attr) aux;
-				checkAttribute(attr_v, true);
-			}
-		}
-
-		elements = features.getElements();
-		while (elements.hasMoreElements()) {
-			aux = elements.nextElement();
-
-			if (aux instanceof method) {
+				checkAttribute(attr_v);
+			} else if (aux instanceof method) {
 				method_v = (method) aux;
 				checkMethod(method_v);
 			}
@@ -340,40 +317,11 @@ class ClassTable {
 	private void iterateOverClass(class_ cl) {
 		symbolTable.enterScope();
 
-		classesParent.put(cl, cl.parent.str);
-		loadedClasses.put(cl.name.str, cl);
-
 		currentClass = cl;
-		currentClassMethods = new HashMap<String, method>();
-		methodsDefinedByClass.put(cl.name.str, currentClassMethods);
-
-		currentClassAttributes = new HashMap<String, attr>();
-		attributesDefinedByClass.put(cl.name.str, currentClassAttributes);
-
-		// Copiez functiile din clasa parinte
-		// si le suprascriu in copil, daca e cazul
-		HashMap<String, method> inheritedMethods = methodsDefinedByClass
-				.get(cl.parent.str);
-		HashMap<String, attr> inheritedAttributes = attributesDefinedByClass
-				.get(cl.parent.str);
-
-		if (inheritedMethods != null) {
-			Iterator<String> it = inheritedMethods.keySet().iterator();
-			while (it.hasNext()) {
-				String key = it.next();
-				currentClassMethods.put(key, inheritedMethods.get(key));
-			}
-		}
-
-		if (inheritedAttributes != null) {
-			Iterator<String> it = inheritedAttributes.keySet().iterator();
-			while (it.hasNext()) {
-				String key = it.next();
-				currentClassAttributes.put(key, inheritedAttributes.get(key));
-			}
-		}
-
+		currentClassAttributes = attributesDefinedByClass.get(cl.name.str);
+		currentClassMethods = methodsDefinedByClass.get(cl.name.str);
 		iterateOverFeatures(cl.features);
+
 		symbolTable.exitScope();
 	}
 
@@ -393,6 +341,29 @@ class ClassTable {
 		Enumeration cls_e = cls.getElements();
 		Object aux;
 
+		// Iterez de doua ori peste fisierul sursa
+		// - in prima etapa incarc definitiile claselor, functiilor
+		// si a atributelor
+		// - in a doua evaluez expresia de initializare
+		while (cls_e.hasMoreElements()) {
+			aux = (class_) cls_e.nextElement();
+			if (aux instanceof class_)
+				loadClassDefinition((class_) aux);
+			else
+				reportError(aux, "[ERROR] Expected class_ instance");
+		}
+
+		Iterator<String> it = loadedClasses.keySet().iterator();
+		while (it.hasNext()) {
+			aux = loadedClasses.get(it.next());
+			loadInheritData((class_) aux);
+		}
+
+		// FIXME:
+		//Debugger.iterateOverAttrHashMap(attributesDefinedByClass);
+		//Debugger.iterateOverMethodHashMap(methodsDefinedByClass);
+
+		cls_e = cls.getElements();
 		while (cls_e.hasMoreElements()) {
 			aux = (class_) cls_e.nextElement();
 			if (aux instanceof class_)
@@ -569,7 +540,13 @@ class ClassTable {
 	}
 
 	private boolean eqValid(String str) {
-		return str.equals(STRING) || str.equals(BOOL) || str.equals(INT);
+		// return str.equals(STRING) || str.equals(BOOL) || str.equals(INT);
+
+		// Operatia de "egalitate" se poate aplica pentru orice
+		// clasa definita de utilizator
+		if (str.equals(SELF_TYPE))
+			return true;
+		return this.loadedClasses.containsKey(str);
 	}
 
 	private String eqExpr(eq eq) {
@@ -598,7 +575,7 @@ class ClassTable {
 	private String isvoidExpr(isvoid isvoid) {
 		String e1 = checkExpression(isvoid.e1);
 
-		if (e1.equals(INT) || e1.equals(BOOL)) {
+		if (e1 != null) {
 			isvoid.set_type(AbstractTable.idtable.addString(BOOL));
 			return BOOL;
 		}
@@ -631,39 +608,51 @@ class ClassTable {
 			} else if (type instanceof AbstractSymbol) {
 				object.set_type((AbstractSymbol) type);
 				return ((AbstractSymbol) type).str;
+			} else if (type instanceof String) {
+				object.set_type(AbstractTable.idtable.addString((String) type));
+				return (String) type;
+			} else if (type == null) {
+				attr attr = currentClassAttributes.get(object.name.str);
+				if (attr == null)
+					semantError().append(
+							"[Line " + object.lineNumber
+									+ "] Failed searching object "
+									+ object.name.str + ".\n");
+				object.set_type(attr.type_decl);
+				return attr.type_decl.str;
 			}
 
 			reportError(type, "[ERROR] Expected abstract symbol instance");
 			return null;
 		}
+
 		return object.get_type().str;
 	}
 
 	private String m_let(let let) {
+		// FIXME
 		symbolTable.enterScope();
 
 		symbolTable.addId(let.identifier, let.type_decl);
 
 		String initType = checkExpression(let.init);
-
 		String result = null;
 
-		System.out.println(initType);
-		System.out.println(let.type_decl.str);
-
-		if (initType.equals(let.type_decl.str) || initType.equals(NO_EXPR)) {
+		if (initType.equals(let.type_decl.str)
+				|| initType.equals(NO_EXPR)
+				|| getCommonClass(initType, let.type_decl.str).equals(
+						let.type_decl))
 			result = checkExpression(let.body);
-			if (result != null)
-				let.set_type(let.body.get_type());
-		} else {
+		else {
 			reportError(initType, "[ERROR] Inconsistent state");
 			checkExpression(let.body);
 		}
 
 		if (result == null) {
-			System.out.println("HMM");
+			reportError(null, "[ERROR] Inconsistent state in let expression");
 			System.exit(0);
 		}
+		let.set_type(let.body.get_type());
 
 		symbolTable.exitScope();
 		return result;
@@ -677,20 +666,13 @@ class ClassTable {
 		class_ currentClass;
 		HashMap<String, method> currentClassMethods;
 
-		if (dispatch.expr instanceof string_const) {
-			new Integer(5);
-		}
 		objType = checkExpression(dispatch.expr);
-		System.out.println(objType);
-		try {
-			// System.in.read();
-		} catch (Exception e) {
-
-		}
 
 		if (objType == null)
 			semantError().append(
-					"Could not find type for object " + dispatch.name.str);
+					"[line " + dispatch.lineNumber
+							+ "] Could not find type for object "
+							+ dispatch.name.str + ".\n");
 
 		// Caut definitia metodei
 		boolean search = false;
@@ -710,7 +692,14 @@ class ClassTable {
 
 		currentClassMethods = this.methodsDefinedByClass
 				.get(currentClass.name.str);
+
+		System.out.println("Clasa curenta " + currentClass.name.str);
+		System.out.println(this.methodsDefinedByClass);
+
 		method method = currentClassMethods.get(dispatch.name.str);
+		System.out.println(currentClassMethods);
+		System.out.println("Am cautat " + dispatch.name.str);
+
 		Enumeration method_params = method.formals.getElements();
 
 		while (params.hasMoreElements() && method_params.hasMoreElements()) {
@@ -727,12 +716,20 @@ class ClassTable {
 			else
 				reportError(def_p, "[ERROR] Expected formal instance");
 
-			System.out.println(call_t + "|||" + def_t);
+			if (call_t.equals(SELF_TYPE))
+				call_t = this.currentClass.name.str;
 
-			if (!call_t.equals(def_t))
+			if (def_t.equals(SELF_TYPE))
+				reportError(null,
+						"SELF_TYPE painful error in formal parameters");
+
+			if (!getCommonClass(call_t, def_t).equals(
+					AbstractTable.idtable.addString(def_t))) {
 				semantError().append(
-						"Types does not match at calling method "
+						"[Line " + dispatch.lineNumber
+								+ "] Types do not match at calling method "
 								+ dispatch.name.str + ".\n");
+			}
 		}
 
 		if (params.hasMoreElements())
@@ -744,10 +741,15 @@ class ClassTable {
 					"Too few parameters for calling method "
 							+ dispatch.name.str + ".\n");
 
-		if (method.return_type.str.equals(SELF_TYPE))
+		if (method.return_type.str.equals(SELF_TYPE)
+				&& !currentClass.name.str.equals(this.currentClass.name.str)) {
+			// Schimb tipul din SELF_TYPE in numele clasei
+			// doar daca numele clasei curente difera de self-ul referit
+			// de metoda
 			dispatch.set_type(currentClass.name);
-		else
-			dispatch.set_type(method.return_type);
+			return currentClass.name.str;
+		}
+		dispatch.set_type(method.return_type);
 		return method.return_type.str;
 	}
 
@@ -785,8 +787,14 @@ class ClassTable {
 	private String m_cond(cond cond) {
 		String thenExpr, elseExpr;
 		checkExpression(cond.pred);
+
+		symbolTable.enterScope();
 		thenExpr = checkExpression(cond.then_exp);
+		symbolTable.exitScope();
+
+		symbolTable.enterScope();
 		elseExpr = checkExpression(cond.else_exp);
+		symbolTable.exitScope();
 
 		String then_ret = null;
 		if (thenExpr != null)
@@ -796,24 +804,21 @@ class ClassTable {
 		if (elseExpr != null)
 			else_ret = cond.else_exp.get_type().str;
 
-		if (then_ret.equals(else_ret)) {
+		if (then_ret.equals(else_ret))
 			cond.set_type(cond.then_exp.get_type());
-		} else {
-			System.out.println("TURC PROST");
-			// AbstractSymbol resultSymbol = getCommonClass(then_ret, else_ret);
-			// String result = resultSymbol.str;
-			// cond.set_type(resultSymbol);
-			// return result;
-		}
+		else
+			cond.set_type(getCommonClass(else_ret, then_ret));
 
-		return thenExpr;
+		return cond.get_type().str;
 	}
 
 	private String m_assign(assign assign) {
 		String result = checkExpression(assign.expr);
 
-		if (result != null)
+		if (result != null) {
+			symbolTable.addId(assign.name, assign.expr.get_type());
 			assign.set_type(assign.expr.get_type());
+		}
 
 		return result;
 	}
@@ -833,6 +838,8 @@ class ClassTable {
 
 			if (aux instanceof branch) {
 				branch branch = (branch) aux;
+				symbolTable.enterScope();
+				symbolTable.addId(branch.name, branch.type_decl);
 				if (checkExpression(branch.expr) != null
 						&& branch.expr.get_type() != null) {
 					if (type == null)
@@ -840,13 +847,12 @@ class ClassTable {
 					else
 						aux_type = branch.expr.get_type();
 				}
+				symbolTable.exitScope();
 			} else
 				reportError(aux, "[ERROR] Expected branch in typcase instance");
 
 			if (aux_type != null && type != null && !type.equals(aux_type)) {
-				System.out.println(type + " " + aux_type);
-				System.out.println("Tre sa alegi intre tipuri in plm.....");
-				System.exit(0);
+				type = getCommonClass(type.str, aux_type.str);
 			}
 		}
 
@@ -915,5 +921,79 @@ class ClassTable {
 		}
 
 		return null;
+	}
+
+	private void loadClassDefinition(class_ cl) {
+		classesParent.put(cl, cl.parent.str);
+		loadedClasses.put(cl.name.str, cl);
+
+		currentClass = cl;
+
+		currentClassMethods = new HashMap<String, method>();
+		methodsDefinedByClass.put(cl.name.str, currentClassMethods);
+
+		currentClassAttributes = new HashMap<String, attr>();
+		attributesDefinedByClass.put(cl.name.str, currentClassAttributes);
+
+		loadFeatures(cl.features);
+	}
+
+	private void loadFeatures(Features features) {
+		Enumeration elements = features.getElements();
+		Object aux;
+		attr attr_v;
+		method method_v;
+
+		while (elements.hasMoreElements()) {
+			aux = elements.nextElement();
+
+			if (aux instanceof attr) {
+				attr_v = (attr) aux;
+				if (currentClass.name.str.equals("Int"))
+					System.out.println(attr_v);
+				currentClassAttributes.put(attr_v.name.str, attr_v);
+			} else if (aux instanceof method) {
+				method_v = (method) aux;
+				currentClassMethods.put(method_v.name.str, method_v);
+			}
+		}
+	}
+
+	private void loadInheritData(class_ cl) {
+		// Copiez functiile din clasa parinte
+		// si le suprascriu in copil, daca e cazul
+		HashMap<String, method> inheritedMethods = null;
+		HashMap<String, attr> inheritedAttributes = null;
+
+		if (cl == null)
+			return;
+
+		System.out.println("Mostenesc " + cl.name.str);
+		// Incarc metodele parintelui si apoi le mostenesc
+		if (cl.parent != null)
+			loadInheritData(loadedClasses.get(cl.parent.str));
+
+		// Copiez functiile din clasa parinte
+		// si le suprascriu in copil, daca e cazul
+		inheritedMethods = methodsDefinedByClass.get(cl.parent.str);
+		inheritedAttributes = attributesDefinedByClass.get(cl.parent.str);
+
+		currentClassMethods = methodsDefinedByClass.get(cl.name.str);
+		if (inheritedMethods != null) {
+			Iterator<String> it = inheritedMethods.keySet().iterator();
+			while (it.hasNext()) {
+				String key = it.next();
+				currentClassMethods.put(key, inheritedMethods.get(key));
+			}
+		}
+
+		currentClassAttributes = attributesDefinedByClass.get(cl.name.str);
+		if (inheritedAttributes != null) {
+			Iterator<String> it = inheritedAttributes.keySet().iterator();
+			while (it.hasNext()) {
+				String key = it.next();
+				currentClassAttributes.put(key, inheritedAttributes.get(key));
+			}
+		}
 	}
 }
