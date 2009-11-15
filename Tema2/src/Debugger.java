@@ -2,6 +2,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -56,10 +58,13 @@ public class Debugger {
 
 	public static void test(String fname) {
 		try {
+			System.out.println("Rulez pentru fisierul " + fname);
 			Classes cl = new Classes(1);
 			Program prg = new program(11, cl);
 
-			// System.out.println("Running test for " + fname);
+			if (fname.contains("multifile"))
+				return;
+			System.out.println("Running test for " + fname);
 			CommonTree rootNode = null;
 			FileInputStream fis = new FileInputStream(fname);
 
@@ -108,6 +113,8 @@ public class Debugger {
 				// Parse the AST and add the partial results to the class list
 				COOLParser.generateOutputData(cl, rootNode, fname);
 
+				prg.semant();
+
 				fis.close();
 			}
 			String fout = fname + ".my.ast";
@@ -133,20 +140,56 @@ public class Debugger {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/advanced/self-type.cl");
-		//test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/advanced/void-2.cl");
-
+		//multiTest();
+		test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/lam.cl");
 		//test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/graph.cl");
-		 //test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/hairyscary.cl");
+		
 		//test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/lam.cl");
-		// test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/life.cl");
-		// test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/multifile-1.cl");
-		// test("/home/sana/Desktop/Semestrul1/CPL/Teme/Tema2/teste/_tests/complex/multifile-2.cl");
+		//runBatteryOfTests(simpleTestsRoot, false);
+		//runBatteryOfTests(advancedTestsRoot, false);
+		//runBatteryOfTests(complexTestsRoot, false);
+	}
 
-		// runBatteryOfTests(simpleTestsRoot, false);
-		// runBatteryOfTests(advancedTestsRoot, false);
-		// runBatteryOfTests(complexTestsRoot, false);
+	public static void iterateOverAttrHashMap(
+			HashMap<String, HashMap<String, attr>> map) {
+		Iterator<String> it = map.keySet().iterator();
+		Iterator<String> it_attr = null;
 
-		// multiTest();
+		System.out.println();
+		System.out.println("Debugging attributes");
+		while (it.hasNext()) {
+			String name = it.next();
+			it_attr = map.get(name).keySet().iterator();
+
+			System.out.println(name);
+
+			while (it_attr.hasNext()) {
+				String attr_name = it_attr.next();
+				attr attr = map.get(name).get(attr_name);
+				System.out.println("  " + attr_name + " " + attr.type_decl);
+			}
+		}
+	}
+
+	public static void iterateOverMethodHashMap(
+			HashMap<String, HashMap<String, method>> map) {
+		Iterator<String> it = map.keySet().iterator();
+		Iterator<String> it_attr = null;
+
+		System.out.println();
+		System.out.println("Debugging methods");
+		while (it.hasNext()) {
+			String name = it.next();
+			it_attr = map.get(name).keySet().iterator();
+
+			System.out.println(name);
+
+			while (it_attr.hasNext()) {
+				String method_name = it_attr.next();
+				method method = map.get(name).get(method_name);
+				System.out.println("  " + method_name + " "
+						+ method.return_type);
+			}
+		}
 	}
 }
